@@ -1,0 +1,29 @@
+[2025-07-20 13:45:18] ❌ 上傳錯誤：1
+[2025-07-20 13:45:50] 📤 執行命令："C:\Apache24\htdocs\exiftool-13.32_64\exiftool-13.32_64\exiftool.exe" -j -DateTimeOriginal -GPSLatitude -GPSLongitude "C:\Apache24\htdocs\uploads\687cf30a9c50c.jpg"
+[2025-07-20 13:45:50] 📥 ExifTool 回傳：[{
+  "SourceFile": "C:/Apache24/htdocs/uploads/687cf30a9c50c.jpg",
+  "DateTimeOriginal": "2025:05:18 10:23:18",
+  "GPSLatitude": "24 deg 9' 9.25\" N",
+  "GPSLongitude": "120 deg 40' 56.76\" E"
+}]
+
+[2025-07-20 13:47:52] 📤 執行命令："C:\Apache24\htdocs\exiftool-13.32_64\exiftool-13.32_64\exiftool.exe" -j -DateTimeOriginal -GPSLatitude -GPSLongitude "C:\Apache24\htdocs\uploads\687cf384c8812.jpg"
+[2025-07-20 13:47:52] 📥 ExifTool 回傳：[{
+  "SourceFile": "C:/Apache24/htdocs/uploads/687cf384c8812.jpg",
+  "DateTimeOriginal": "2025:05:18 10:23:18",
+  "GPSLatitude": "24 deg 9' 9.25\" N",
+  "GPSLongitude": "120 deg 40' 56.76\" E"
+}]
+
+[2025-07-20 22:15:05] ❌ 上傳錯誤：1
+[2025-07-20 22:15:39] ❌ 上傳錯誤：1
+[2025-07-20 22:15:55] ❌ 上傳錯誤：1
+[2025-07-20 22:16:20] 📤 執行命令："C:\Apache24\htdocs\exiftool-13.32_64\exiftool-13.32_64\exiftool.exe" -j -DateTimeOriginal -GPSLatitude -GPSLongitude "C:\Apache24\htdocs\uploads/687cfa32291c4.jpg"
+[2025-07-20 22:16:22] 📥 ExifTool 回傳：[{
+  "SourceFile": "C:/Apache24/htdocs/uploads/687cfa32291c4.jpg",
+  "DateTimeOriginal": "2025:06:02 18:24:19",
+  "GPSLatitude": "24 deg 8' 51.61\" N",
+  "GPSLongitude": "120 deg 41' 3.49\" E"
+}]
+
+[2025-07-20 22:16:37] ❌ 上傳錯誤：1

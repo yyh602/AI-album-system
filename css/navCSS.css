@@ -1,0 +1,64 @@
+/*Logo圖*/
+#logo{
+    width: 80px;
+    margin-left: 2px;
+    float: left;
+}
+#logoimg{
+    width: 70px;
+    height: 70px;
+}
+
+/*選單列表*/
+nav{
+    float:left;
+    margin: 15px 30px;
+    text-align: center;
+}
+ul{
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+.menu{
+    font-family: '標楷體';
+    font-size: 20px;
+}
+.menu > li{ /*子選擇器，只有第一層*/
+    float: left;
+}
+.menu li{
+    position: relative;
+    padding: 0px;
+    border: 0px;
+    margin: 0px 10px;
+    min-width: 140px;
+}
+.menu ul{
+    position: absolute;
+    z-index: 10;
+    top: 100%;
+    display: none; /*預設ul不顯示*/
+}
+.menu ul li> ul{ /*定義上一層ul li與下一層ul的距離*/
+    z-index: 20;
+    top: 5%;
+    left: 95%;
+}
+.menu a{
+    display: block;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    background-image: url(../img/btn1.png);
+    background-size: cover;
+    color: black;
+}
+.menu a:hover{
+    background-image: url(../img/btn2.png);
+    background-size: cover;
+    color: white;
+}
+.menu li:hover > ul{
+    display:block; /*移動到li，li下一層的ul才顯示*/
+}

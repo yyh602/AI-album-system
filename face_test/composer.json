@@ -1,0 +1,11 @@
+{
+    "name": "1311134007/face_test",
+    "autoload": {
+        "psr-4": {
+            "1311134007\\FaceTest\\": "src/"
+        }
+    },
+    "require": {
+        "google/cloud-vision": "^2.0"
+    }
+}

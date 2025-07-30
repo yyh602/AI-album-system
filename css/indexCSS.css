@@ -1,0 +1,44 @@
+@charset "UTF-8";
+body{
+    background-color: #ccfbfb4f;
+    margin: 0px;
+    padding: 0px;
+    padding-top: 100px;
+}
+
+/*功能列表 設定*/
+header{
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: #94cecbd2;
+    width: 100%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    border: 1px dotted #94c8b1;
+    z-index: 999;
+}
+
+/*清除在header引入Style中的float設定*/
+.Clearheader::after{
+    content: "";
+    display: block;
+    clear: both;
+}
+
+/*內容區域 設定*/
+#contents{
+    display: block; /* 改為 block 讓標題與項目顯示在上下 */
+    width: 988px;
+    margin: 0px auto;
+    padding: 40px 80px;
+    border: 1px solid #f6bb9e;
+    background-color: #fff;
+    text-align: center;
+}
+
+
+/*頁尾資訊 設定*/
+#footer{
+    text-align: center;
+    clear: both;        /*清除在footer引入Style中的float設定*/
+}
