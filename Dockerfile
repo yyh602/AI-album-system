@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     libwebp-dev \
     libxml2-dev \
     libssl-dev \
+    # PostgreSQL 依賴
+    libpq-dev \
     # 專案套件
     exiftool \
     imagemagick \
@@ -40,13 +42,15 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
         mysqli \
         pdo_mysql \
-        pdo_pgsql \
         exif \
         gd \
         zip \
         mbstring \
         xml \
         opcache
+
+# 安裝 PostgreSQL 擴展
+RUN docker-php-ext-install pdo_pgsql
 
 # 安裝 ImageMagick 擴展
 RUN pecl install imagick \
