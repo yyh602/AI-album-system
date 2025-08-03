@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+php_errors.log
+upload_log.txt
+
+# Temporary files
+*.tmp
+*.temp
+
+# Large files that shouldn't be in container
+*.heic
+*.HEIC
+IMG_1234.jpg
+IMG_1234.heic
+
+# Development files
+debug_exif_output.json
+last_meta.json
+
+# Documentation
+README.md
+*.md
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Composer
+vendor/
+composer.lock
+
+# Uploads (will be created in container)
+uploads/
+
+# Face test uploads
+face_test/uploads/
+face_test/faces/
+face_test/group/
+face_test/subimages/
+
+# ExifTool and ImageMagick binaries (not needed in container)
+exiftool-13.32_64/
+ImageMagick-7.1.1-Q16-HDRI/ 

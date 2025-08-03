@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ai-album-system
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: APACHE_DOCUMENT_ROOT
+        value: /var/www/html
+    healthCheckPath: /
+    autoDeploy: true 
