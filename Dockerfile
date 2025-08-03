@@ -27,6 +27,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
+    python3-dev \
+    build-essential \
     # 清理
     && rm -rf /var/lib/apt/lists/*
 
@@ -57,12 +59,17 @@ RUN a2enmod rewrite
 # 複製應用程式檔案
 COPY . /var/www/html/
 
-# 升級 pip 並安裝 Python 依賴
-RUN pip3 install --upgrade pip && \
-    pip3 install --break-system-packages -r requirements.txt
-
 # 設定工作目錄
 WORKDIR /var/www/html
+
+# 創建 Python 虛擬環境並安裝基本依賴
+RUN python3 -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --upgrade pip && \
+    pip install flask==2.3.3
+
+# 設定 Python 虛擬環境路徑
+ENV PATH="/opt/venv/bin:$PATH"
 
 # 安裝 face_test 的 PHP 依賴
 RUN cd face_test && composer install --no-dev --optimize-autoloader
