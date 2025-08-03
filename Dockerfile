@@ -38,7 +38,9 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # 安裝 PHP 擴展
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
+        mysqli \
         pdo_mysql \
+        pdo_pgsql \
         exif \
         gd \
         zip \
