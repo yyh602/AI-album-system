@@ -54,16 +54,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 # 設定 Apache 配置
 RUN a2enmod rewrite
 
-# 創建 requirements.txt 文件
-RUN echo "flask==2.3.3" > requirements.txt \
-    && echo "google-generativeai==0.3.2" >> requirements.txt \
-    && echo "google-cloud-vision==3.4.4" >> requirements.txt
-
-# 安裝 Python 依賴
-RUN pip3 install -r requirements.txt
-
 # 複製應用程式檔案
 COPY . /var/www/html/
+
+# 升級 pip 並安裝 Python 依賴
+RUN pip3 install --upgrade pip && \
+    pip3 install --break-system-packages -r requirements.txt
 
 # 設定工作目錄
 WORKDIR /var/www/html
