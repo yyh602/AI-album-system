@@ -7,21 +7,35 @@ if (!isset($_SESSION["username"])) {
 }
 
 require_once("DB_open.php");
+require_once("DB_helper.php");
 
 $username = $_SESSION["username"];
 $name = $username;
 
-$sql = "SELECT name FROM user WHERE username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "s", $username);
-mysqli_stmt_execute($stmt);
-mysqli_stmt_bind_result($stmt, $result_name);
-
-if (mysqli_stmt_fetch($stmt)) {
-    $name = $result_name;
+// 檢查連接類型並使用相應的查詢方式
+if ($link instanceof PDO) {
+    // PostgreSQL 查詢
+    $sql = "SELECT name FROM \"user\" WHERE username = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$username]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $name = $row['name'];
+    }
+} else {
+    // MySQL 查詢
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $result_name);
+    
+    if (mysqli_stmt_fetch($stmt)) {
+        $name = $result_name;
+    }
+    mysqli_stmt_close($stmt);
 }
 
-mysqli_stmt_close($stmt);
 require_once("DB_close.php");
 ?>
 <!DOCTYPE html>
