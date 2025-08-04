@@ -8,5 +8,5 @@ services:
     envVars:
       - key: APACHE_DOCUMENT_ROOT
         value: /var/www/html
-    healthCheckPath: /
+    healthCheckPath: /simple.php
     autoDeploy: true 
