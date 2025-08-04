@@ -1,31 +1,45 @@
 <?php
 session_start();    //啟用交談期
 $username = "";     $password = "";
+$login_error = false;
+
 // 取得表單欄位值
 if(isset($_POST["Username"]))
     $username = $_POST["Username"];
 if(isset($_POST["Password"]))
     $password = $_POST["Password"];
+
 // 檢查是否輸入使用者名稱和密碼
 if($username != "" && $password != ""){
-    require_once("DB_open.php");    //引入資料庫連結設定檔
-    // 建立SQL指令字串
-    $sql = "SELECT * FROM user WHERE password='";
-    $sql.= $password."' AND username='".$username."'";
-    // 執行SQL查詢
-    $result = mysqli_query($link, $sql);
-    $total_records = mysqli_num_rows($result);
-    // 是否有查詢到使用者紀錄
-    if($total_records > 0){
-        // 成功登入, 指定Session變數
-        $_SESSION["login_session"] = true;
-        $_SESSION["username"] = $username;
-        header("Location: welcome.php");
-    } else {    // 登入失敗
+    try {
+        require_once("DB_open.php");    //引入資料庫連結設定檔
+        // 建立SQL指令字串
+        $sql = "SELECT * FROM user WHERE password='";
+        $sql.= $password."' AND username='".$username."'";
+        // 執行SQL查詢
+        $result = mysqli_query($link, $sql);
+        if ($result) {
+            $total_records = mysqli_num_rows($result);
+            // 是否有查詢到使用者紀錄
+            if($total_records > 0){
+                // 成功登入, 指定Session變數
+                $_SESSION["login_session"] = true;
+                $_SESSION["username"] = $username;
+                header("Location: welcome.php");
+                exit();
+            } else {    // 登入失敗
+                $login_error = true;
+                $_SESSION["login_session"] = false;
+            }
+        } else {
+            $login_error = true;
+            error_log("SQL 查詢失敗: " . mysqli_error($link));
+        }
+        require_once("DB_close.php");   //引入資料庫關閉設定檔
+    } catch (Exception $e) {
         $login_error = true;
-        $_SESSION["login_session"] = false;
+        error_log("資料庫連接錯誤: " . $e->getMessage());
     }
-    require_once("DB_close.php");   //引入資料庫關閉設定檔
 }
 ?>
 
