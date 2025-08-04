@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libwebp-dev \
     libxml2-dev \
     libssl-dev \
+    libpq-dev \
     exiftool \
     imagemagick \
     unzip \
@@ -36,6 +37,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
         mysqli \
         pdo_mysql \
+        pdo_pgsql \
         exif \
         gd \
         zip \
