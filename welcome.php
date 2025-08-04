@@ -13,18 +13,28 @@ $username = $_SESSION["username"];
 $name = $username;
 
 // 使用統一的資料庫操作函數
-$sql = ($link instanceof PDO) ? "SELECT name FROM \"user\" WHERE username = ?" : "SELECT name FROM user WHERE username = ?";
-$stmt = db_prepare($link, $sql);
-db_bind_param($stmt, "s", $username);
-db_execute($stmt);
-$result = db_get_result($stmt);
-$row = db_fetch_assoc($result);
-
-if ($row) {
-    $name = $row['name'];
+if ($link instanceof PDO) {
+    // PostgreSQL 查詢
+    $sql = "SELECT name FROM \"user\" WHERE username = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$username]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $name = $row['name'];
+    }
+} else {
+    // MySQL 查詢
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $result_name);
+    
+    if (mysqli_stmt_fetch($stmt)) {
+        $name = $result_name;
+    }
+    mysqli_stmt_close($stmt);
 }
-
-db_stmt_close($stmt);
 require_once("DB_close.php");
 ?>
 

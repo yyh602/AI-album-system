@@ -18,9 +18,9 @@ function db_bind_param($stmt, $types, ...$params) {
     }
 }
 
-function db_execute($stmt) {
+function db_execute($stmt, $params = null) {
     if ($stmt instanceof PDOStatement) {
-        return $stmt->execute();
+        return $stmt->execute($params);
     } else {
         return mysqli_stmt_execute($stmt);
     }
