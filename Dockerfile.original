@@ -4,8 +4,9 @@ FROM php:8.1-apache
 # 設定非互動式安裝
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 安裝基本系統依賴
+# 安裝系統依賴
 RUN apt-get update && apt-get install -y \
+    # PHP 擴充功能依賴
     libmagickwand-dev \
     libjpeg-dev \
     libpng-dev \
@@ -16,16 +17,19 @@ RUN apt-get update && apt-get install -y \
     libwebp-dev \
     libxml2-dev \
     libssl-dev \
+    # 專案套件
     exiftool \
     imagemagick \
     unzip \
     git \
     curl \
+    # Python 相關
     python3 \
     python3-pip \
     python3-venv \
     python3-dev \
     build-essential \
+    # 清理
     && rm -rf /var/lib/apt/lists/*
 
 # 連結 python3 為 python
@@ -47,6 +51,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
 RUN pecl install imagick \
     && docker-php-ext-enable imagick
 
+# 安裝 Composer
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
 # 設定 Apache 配置
 RUN a2enmod rewrite
 
@@ -55,6 +62,18 @@ COPY . /var/www/html/
 
 # 設定工作目錄
 WORKDIR /var/www/html
+
+# 創建 Python 虛擬環境並安裝基本依賴
+RUN python3 -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --upgrade pip && \
+    pip install flask==2.3.3
+
+# 設定 Python 虛擬環境路徑
+ENV PATH="/opt/venv/bin:$PATH"
+
+# 安裝 face_test 的 PHP 依賴（如果 composer.json 存在）
+RUN if [ -f "face_test/composer.json" ]; then cd face_test && composer install --no-dev --optimize-autoloader; fi
 
 # 設定檔案權限
 RUN chown -R www-data:www-data /var/www/html \
@@ -75,4 +94,4 @@ RUN echo "upload_max_filesize = 50M" >> /usr/local/etc/php/conf.d/uploads.ini \
 EXPOSE 80
 
 # 啟動 Apache
-CMD ["apache2-foreground"] 
+CMD ["apache2-foreground"]
