@@ -15,14 +15,15 @@ if($username != "" && $password != ""){
         // 設定連接超時
         set_time_limit(10);
         require_once("DB_open.php");    //引入資料庫連結設定檔
-        // 建立SQL指令字串
-        $sql = "SELECT * FROM user WHERE password='";
-        $sql.= $password."' AND username='".$username."'";
-        // 執行SQL查詢
-        $result = mysqli_query($link, $sql);
-        if ($result) {
-            $total_records = mysqli_num_rows($result);
-            // 是否有查詢到使用者紀錄
+        
+        // 檢查連接類型並使用相應的查詢方式
+        if ($link instanceof PDO) {
+            // PostgreSQL 查詢
+            $sql = "SELECT * FROM \"user\" WHERE password = ? AND username = ?";
+            $stmt = $link->prepare($sql);
+            $stmt->execute([$password, $username]);
+            $total_records = $stmt->rowCount();
+            
             if($total_records > 0){
                 // 成功登入, 指定Session變數
                 $_SESSION["login_session"] = true;
@@ -34,8 +35,25 @@ if($username != "" && $password != ""){
                 $_SESSION["login_session"] = false;
             }
         } else {
-            $login_error = true;
-            error_log("SQL 查詢失敗: " . mysqli_error($link));
+            // MySQL 查詢
+            $sql = "SELECT * FROM user WHERE password='";
+            $sql.= $password."' AND username='".$username."'";
+            $result = mysqli_query($link, $sql);
+            if ($result) {
+                $total_records = mysqli_num_rows($result);
+                if($total_records > 0){
+                    $_SESSION["login_session"] = true;
+                    $_SESSION["username"] = $username;
+                    header("Location: welcome.php");
+                    exit();
+                } else {
+                    $login_error = true;
+                    $_SESSION["login_session"] = false;
+                }
+            } else {
+                $login_error = true;
+                error_log("SQL 查詢失敗: " . mysqli_error($link));
+            }
         }
         require_once("DB_close.php");   //引入資料庫關閉設定檔
     } catch (Exception $e) {
