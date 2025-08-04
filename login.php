@@ -12,6 +12,8 @@ if(isset($_POST["Password"]))
 // 檢查是否輸入使用者名稱和密碼
 if($username != "" && $password != ""){
     try {
+        // 設定連接超時
+        set_time_limit(10);
         require_once("DB_open.php");    //引入資料庫連結設定檔
         // 建立SQL指令字串
         $sql = "SELECT * FROM user WHERE password='";
