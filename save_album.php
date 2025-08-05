@@ -37,7 +37,9 @@ foreach ($_FILES as $key => $file) {
             'username' => $username,
             'photo1' => $cfile
         ];
-        curl_setopt($ch, CURLOPT_URL, 'http://localhost/uploads.php'); // 路徑依實際情況調整
+        // 使用相對路徑，這樣在 Render 上也能正常工作
+        $currentUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+        curl_setopt($ch, CURLOPT_URL, $currentUrl . '/uploads.php');
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -45,10 +47,15 @@ foreach ($_FILES as $key => $file) {
         curl_close($ch);
 
         $result = json_decode($response, true);
+        error_log("Upload response: " . $response);
+        error_log("Upload result: " . print_r($result, true));
+        
         if ($result && isset($result['status']) && $result['status'] === 'success') {
             $uploadedPhotoIds[] = $result['id'];
             $uploadedPhotoPaths[] = $result['filename'];
             if (!$coverPhoto) $coverPhoto = $result['filename'];
+        } else {
+            error_log("Upload failed for file: " . $file['name'] . ", Response: " . $response);
         }
     }
 }

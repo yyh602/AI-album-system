@@ -7,7 +7,14 @@ if ($link instanceof mysqli) {
 
 // 修正 1：username 取得方式
 $username = $_POST['username'] ?? ($_SESSION['username'] ?? 'guest');
-$exiftoolPath = "C:\\Apache24\\htdocs\\exiftool-13.32_64\\exiftool-13.32_64\\exiftool.exe";
+// 在 Render 上使用系統的 exiftool，如果沒有就跳過 EXIF 處理
+$exiftoolPath = "exiftool";
+if (!file_exists($exiftoolPath)) {
+    $exiftoolPath = "/usr/bin/exiftool";
+}
+if (!file_exists($exiftoolPath)) {
+    $exiftoolPath = null; // 如果找不到 exiftool，就設為 null
+}
 
 function convertGPS($coordinate) {
     if (preg_match('/(\d+)[^\d]+(\d+)[^\d]+([\d.]+)[^\d]*([NSEW])/', $coordinate, $matches)) {
@@ -37,17 +44,22 @@ foreach ($_FILES as $file) {
     $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
     // EXIF 擷取（先取得時間資訊）
-    // 修正 2：exiftool 指令同時抓多個欄位
-    $cmdExif = "\"$exiftoolPath\" -j -DateTimeOriginal -CreateDate -DateTimeDigitized -GPSLatitude -GPSLongitude " . escapeshellarg($tmpPath);
-    $exifOutput = [];
-    $exifReturnCode = 0;
-    exec($cmdExif, $exifOutput, $exifReturnCode);
-    error_log("ExifTool Command: " . $cmdExif);
-    error_log("ExifTool Return Code: " . $exifReturnCode);
-    error_log("ExifTool Raw Output: " . implode('', $exifOutput));
-    $metaArray = json_decode(implode('', $exifOutput), true);
-    error_log("ExifData after json_decode: " . print_r($metaArray, true));
-    $meta = is_array($metaArray) && isset($metaArray[0]) ? $metaArray[0] : [];
+    $meta = [];
+    if ($exiftoolPath) {
+        // 修正 2：exiftool 指令同時抓多個欄位
+        $cmdExif = "\"$exiftoolPath\" -j -DateTimeOriginal -CreateDate -DateTimeDigitized -GPSLatitude -GPSLongitude " . escapeshellarg($tmpPath);
+        $exifOutput = [];
+        $exifReturnCode = 0;
+        exec($cmdExif, $exifOutput, $exifReturnCode);
+        error_log("ExifTool Command: " . $cmdExif);
+        error_log("ExifTool Return Code: " . $exifReturnCode);
+        error_log("ExifTool Raw Output: " . implode('', $exifOutput));
+        $metaArray = json_decode(implode('', $exifOutput), true);
+        error_log("ExifData after json_decode: " . print_r($metaArray, true));
+        $meta = is_array($metaArray) && isset($metaArray[0]) ? $metaArray[0] : [];
+    } else {
+        error_log("⚠️ exiftool 不可用，跳過 EXIF 處理");
+    }
 
     // fallback 順序
     $datetime = $meta['DateTimeOriginal'] ?? $meta['CreateDate'] ?? $meta['DateTimeDigitized'] ?? date("Y-m-d H:i:s");
@@ -71,13 +83,19 @@ foreach ($_FILES as $file) {
 
     // HEIC 轉 JPG
     if ($ext === 'heic') {
+        // 在 Render 上嘗試使用 ImageMagick
         $cmdConvert = "magick convert " . escapeshellarg($tmpPath) . " " . escapeshellarg($uploadFullPath);
         shell_exec($cmdConvert);
         if (!file_exists($uploadFullPath) || filesize($uploadFullPath) < 1000) {
-            error_log("❌ HEIC 轉檔失敗或檔案太小：$uploadFullPath");
-            echo json_encode(["status" => "error", "message" => "HEIC 轉檔失敗或檔案太小"]);
-            require_once("DB_close.php");
-            exit();
+            // 如果 ImageMagick 失敗，嘗試使用 convert 命令
+            $cmdConvert = "convert " . escapeshellarg($tmpPath) . " " . escapeshellarg($uploadFullPath);
+            shell_exec($cmdConvert);
+            if (!file_exists($uploadFullPath) || filesize($uploadFullPath) < 1000) {
+                error_log("❌ HEIC 轉檔失敗或檔案太小：$uploadFullPath");
+                echo json_encode(["status" => "error", "message" => "HEIC 轉檔失敗或檔案太小"]);
+                require_once("DB_close.php");
+                exit();
+            }
         }
     } else {
         if (!move_uploaded_file($tmpPath, $uploadFullPath)) {
@@ -89,17 +107,19 @@ foreach ($_FILES as $file) {
     }
 
     // 重新擷取 EXIF（因為 HEIC 轉 JPG 後要抓新檔案）
-    // 修正 3：exiftool 指令同時抓多個欄位
-    $cmdExif = "\"$exiftoolPath\" -j -DateTimeOriginal -CreateDate -DateTimeDigitized -GPSLatitude -GPSLongitude " . escapeshellarg($uploadFullPath);
-    $exifOutput = [];
-    $exifReturnCode = 0;
-    exec($cmdExif, $exifOutput, $exifReturnCode);
-    error_log("ExifTool Command: " . $cmdExif);
-    error_log("ExifTool Return Code: " . $exifReturnCode);
-    error_log("ExifTool Raw Output: " . implode('', $exifOutput));
-    $metaArray = json_decode(implode('', $exifOutput), true);
-    error_log("ExifData after json_decode: " . print_r($metaArray, true));
-    $meta = is_array($metaArray) && isset($metaArray[0]) ? $metaArray[0] : [];
+    if ($exiftoolPath) {
+        // 修正 3：exiftool 指令同時抓多個欄位
+        $cmdExif = "\"$exiftoolPath\" -j -DateTimeOriginal -CreateDate -DateTimeDigitized -GPSLatitude -GPSLongitude " . escapeshellarg($uploadFullPath);
+        $exifOutput = [];
+        $exifReturnCode = 0;
+        exec($cmdExif, $exifOutput, $exifReturnCode);
+        error_log("ExifTool Command: " . $cmdExif);
+        error_log("ExifTool Return Code: " . $exifReturnCode);
+        error_log("ExifTool Raw Output: " . implode('', $exifOutput));
+        $metaArray = json_decode(implode('', $exifOutput), true);
+        error_log("ExifData after json_decode: " . print_r($metaArray, true));
+        $meta = is_array($metaArray) && isset($metaArray[0]) ? $metaArray[0] : [];
+    }
 
     if (!$meta) {
         error_log("❌ 無法擷取 EXIF，原圖名：$originalName");
