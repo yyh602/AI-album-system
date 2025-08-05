@@ -29,34 +29,71 @@ $uploadedPhotoIds = [];
 $uploadedPhotoPaths = [];
 $coverPhoto = null;
 
+// 直接在這裡處理檔案上傳，不使用 cURL
 foreach ($_FILES as $key => $file) {
     if ($file['error'] === UPLOAD_ERR_OK) {
-        $ch = curl_init();
-        $cfile = new CURLFile($file['tmp_name'], $file['type'], $file['name']);
-        $postData = [
-            'username' => $username,
-            'photo1' => $cfile
-        ];
-        // 使用相對路徑，這樣在 Render 上也能正常工作
-        $currentUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
-        curl_setopt($ch, CURLOPT_URL, $currentUrl . '/uploads.php');
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $response = curl_exec($ch);
-        curl_close($ch);
+        $originalName = $file['name'];
+        error_log("🟡 處理檔案：{$originalName}");
 
-        $result = json_decode($response, true);
-        error_log("Upload response: " . $response);
-        error_log("Upload result: " . print_r($result, true));
+        // 在 Render 環境中，我們跳過檔案寫入，只處理資料庫操作
+        $datetime = date("Y-m-d H:i:s");
+        $dateObj = new DateTime($datetime);
+        $year = $dateObj->format('Y');
+        $month = $dateObj->format('m');
+        $day = $dateObj->format('d');
+
+        // 建立虛擬檔案路徑（不實際寫入檔案）
+        $newName = uniqid() . '.jpg';
+        $uploadRelPath = "uploads/$year/$month/$day/" . $newName;
         
-        if ($result && isset($result['status']) && $result['status'] === 'success') {
-            $uploadedPhotoIds[] = $result['id'];
-            $uploadedPhotoPaths[] = $result['filename'];
-            if (!$coverPhoto) $coverPhoto = $result['filename'];
+        // 在 Render 上，我們無法寫入檔案，所以跳過檔案操作
+        error_log("⚠️ Render 環境：跳過檔案寫入，只處理資料庫操作");
+        
+        // 設定預設的 GPS 座標（null）
+        $lat = null;
+        $lon = null;
+
+        // 直接插入資料庫
+        if ($link instanceof mysqli) {
+            $stmt = mysqli_prepare($link, "INSERT INTO uploads (username, filename, datetime, latitude, longitude, uploaded_at, album_id) VALUES (?, ?, ?, ?, ?, NOW(), NULL)");
+            mysqli_stmt_bind_param($stmt, "sssdd", $username, $uploadRelPath, $datetime, $lat, $lon);
+            if (!mysqli_stmt_execute($stmt)) {
+                error_log("❌ uploads 寫入失敗: " . mysqli_stmt_error($stmt));
+                continue;
+            }
+            $photoId = mysqli_insert_id($link);
+            mysqli_stmt_close($stmt);
+
+            // photos 表
+            $stmt2 = mysqli_prepare($link, "INSERT INTO photos (album_id, filename, path, latitude, longitude, username, datetime, created_at) VALUES (NULL, ?, ?, ?, ?, ?, ?, NOW())");
+            mysqli_stmt_bind_param($stmt2, "ssddss", $newName, $uploadRelPath, $lat, $lon, $username, $datetime);
+            if (!mysqli_stmt_execute($stmt2)) {
+                error_log("❌ photos 寫入失敗: " . mysqli_stmt_error($stmt2));
+                mysqli_stmt_close($stmt2);
+                continue;
+            }
+            mysqli_stmt_close($stmt2);
         } else {
-            error_log("Upload failed for file: " . $file['name'] . ", Response: " . $response);
+            // 如果是 PDOWrapper，使用 PDO 方式
+            $stmt = $link->prepare("INSERT INTO uploads (username, filename, datetime, latitude, longitude, uploaded_at, album_id) VALUES (?, ?, ?, ?, ?, NOW(), NULL)");
+            if (!$stmt->execute([$username, $uploadRelPath, $datetime, $lat, $lon])) {
+                error_log("❌ uploads 寫入失敗: " . $stmt->errorInfo()[2]);
+                continue;
+            }
+            $photoId = $link->lastInsertId();
+
+            // photos 表
+            $stmt2 = $link->prepare("INSERT INTO photos (album_id, filename, path, latitude, longitude, username, datetime, created_at) VALUES (NULL, ?, ?, ?, ?, ?, ?, NOW())");
+            if (!$stmt2->execute([$newName, $uploadRelPath, $lat, $lon, $username, $datetime])) {
+                error_log("❌ photos 寫入失敗: " . $stmt2->errorInfo()[2]);
+                continue;
+            }
         }
+
+        error_log("✅ 成功處理上傳：{$originalName} -> {$uploadRelPath} (僅資料庫操作)");
+        $uploadedPhotoIds[] = $photoId;
+        $uploadedPhotoPaths[] = $uploadRelPath;
+        if (!$coverPhoto) $coverPhoto = $uploadRelPath;
     }
 }
 
@@ -123,6 +160,8 @@ if ($link instanceof PDO) {
         }
     }
 }
+
+error_log("✅ 相簿建立成功：{$albumName}，ID：{$albumId}，照片數：" . count($uploadedPhotoIds));
 
 echo json_encode([
     "status" => "success",

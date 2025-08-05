@@ -465,20 +465,39 @@ require_once("DB_close.php");
                     return;
                 }
                 try {
+                    console.log('開始上傳相簿：', albumName);
                     const res = await fetch('save_album.php', {
                         method: 'POST',
                         body: formData
                     });
-                    const result = await res.json();
+                    console.log('伺服器回應狀態：', res.status);
+                    
+                    const responseText = await res.text();
+                    console.log('伺服器回應內容：', responseText);
+                    
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('JSON 解析失敗：', parseError);
+                        alert('伺服器回應格式錯誤：' + responseText);
+                        return;
+                    }
+                    
+                    console.log('解析後的結果：', result);
+                    
                     if (result.status === 'success') {
+                        console.log('相簿建立成功！');
                         // 關閉 modal 並刷新我的相簿
                         bootstrap.Modal.getInstance(document.getElementById('albumModal')).hide();
                         resetAlbumModal();
                         loadMyAlbums();
                     } else {
+                        console.error('相簿建立失敗：', result.message);
                         alert('建立失敗：' + (result.message || '未知錯誤'));
                     }
                 } catch (e) {
+                    console.error('上傳過程發生錯誤：', e);
                     alert('建立失敗，請稍後再試');
                 }
             };
