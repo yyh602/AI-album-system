@@ -105,5 +105,4 @@ function db_rollback($link) {
     } else {
         return mysqli_rollback($link);
     }
-}
-?> 
+} 

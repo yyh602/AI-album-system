@@ -8,4 +8,3 @@ if ($link instanceof PDO) {
     // 如果是 PDOWrapper 或其他類型，設為 null
     $link = null;
 }
-?>

@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 if ($link instanceof PDO) {
     $link->exec("SET NAMES utf8mb4");
-} else {
+} elseif ($link instanceof mysqli) {
     mysqli_set_charset($link, "utf8mb4");
 }
 
@@ -169,4 +169,3 @@ echo json_encode([
 ]);
 require_once("DB_close.php");
 exit();
-?>

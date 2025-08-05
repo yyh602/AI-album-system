@@ -75,4 +75,3 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
     $row = $currentDb->fetch_row();
     error_log('【目前連線資料庫】：' . $row[0]);
 }
-?>
