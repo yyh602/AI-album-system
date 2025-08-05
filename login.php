@@ -36,11 +36,32 @@ if($username != "" && $password != ""){
             }
         } else {
             // MySQL 查詢
-            $sql = "SELECT * FROM \"user\" WHERE password='";
-            $sql.= $password."' AND username='".$username."'";
-            $result = mysqli_query($link, $sql);
-            if ($result) {
-                $total_records = mysqli_num_rows($result);
+            if ($link instanceof mysqli) {
+                $sql = "SELECT * FROM \"user\" WHERE password='";
+                $sql.= $password."' AND username='".$username."'";
+                $result = mysqli_query($link, $sql);
+                if ($result) {
+                    $total_records = mysqli_num_rows($result);
+                    if($total_records > 0){
+                        $_SESSION["login_session"] = true;
+                        $_SESSION["username"] = $username;
+                        header("Location: welcome.php");
+                        exit();
+                    } else {
+                        $login_error = true;
+                        $_SESSION["login_session"] = false;
+                    }
+                } else {
+                    $login_error = true;
+                    error_log("SQL 查詢失敗: " . mysqli_error($link));
+                }
+            } else {
+                // 如果是 PDOWrapper，使用 PDO 方式查詢
+                $sql = "SELECT * FROM \"user\" WHERE password = ? AND username = ?";
+                $stmt = $link->prepare($sql);
+                $stmt->execute([$password, $username]);
+                $total_records = $stmt->rowCount();
+                
                 if($total_records > 0){
                     $_SESSION["login_session"] = true;
                     $_SESSION["username"] = $username;
@@ -50,9 +71,6 @@ if($username != "" && $password != ""){
                     $login_error = true;
                     $_SESSION["login_session"] = false;
                 }
-            } else {
-                $login_error = true;
-                error_log("SQL 查詢失敗: " . mysqli_error($link));
             }
         }
         require_once("DB_close.php");   //引入資料庫關閉設定檔

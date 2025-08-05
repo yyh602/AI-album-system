@@ -11,17 +11,29 @@ require_once("DB_open.php");
 $username = $_SESSION["username"];
 $name = $username;
 
-$sql = "SELECT name FROM \"user\" WHERE username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "s", $username);
-mysqli_stmt_execute($stmt);
-mysqli_stmt_bind_result($stmt, $result_name);
+if ($link instanceof mysqli) {
+    $sql = "SELECT name FROM \"user\" WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $result_name);
 
-if (mysqli_stmt_fetch($stmt)) {
-    $name = $result_name;
+    if (mysqli_stmt_fetch($stmt)) {
+        $name = $result_name;
+    }
+
+    mysqli_stmt_close($stmt);
+} else {
+    // 如果是 PDOWrapper，使用 PDO 方式查詢
+    $sql = "SELECT name FROM \"user\" WHERE username = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$username]);
+    $result = $stmt->fetch();
+    
+    if ($result) {
+        $name = $result['name'];
+    }
 }
-
-mysqli_stmt_close($stmt);
 require_once("DB_close.php");
 ?>
 <!DOCTYPE html>
