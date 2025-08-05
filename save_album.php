@@ -109,14 +109,14 @@ foreach ($_FILES as $key => $file) {
         } else {
             error_log("⚠️ exiftool 不可用，嘗試使用 ImageMagick");
             
-            // 方法 2：嘗試使用 ImageMagick
-            $magickPath = "magick";
-            if (!file_exists($magickPath)) {
-                $magickPath = "/usr/bin/magick";
+            // 方法 2：嘗試使用 ImageMagick convert
+            $convertPath = "convert";
+            if (!file_exists($convertPath)) {
+                $convertPath = "/usr/bin/convert";
             }
             
-            if (file_exists($magickPath)) {
-                $cmd = "\"$magickPath\" identify -format '%[EXIF:DateTimeOriginal] %[EXIF:GPSLatitude] %[EXIF:GPSLongitude]' " . escapeshellarg($file['tmp_name']);
+            if (file_exists($convertPath)) {
+                $cmd = "\"$convertPath\" " . escapeshellarg($file['tmp_name']) . " -format '%[EXIF:DateTimeOriginal] %[EXIF:GPSLatitude] %[EXIF:GPSLongitude]' info:";
                 $magickOutput = [];
                 $magickReturnCode = 0;
                 exec($cmd, $magickOutput, $magickReturnCode);
