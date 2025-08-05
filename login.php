@@ -36,7 +36,7 @@ if($username != "" && $password != ""){
             }
         } else {
             // MySQL 查詢
-            $sql = "SELECT * FROM user WHERE password='";
+            $sql = "SELECT * FROM \"user\" WHERE password='";
             $sql.= $password."' AND username='".$username."'";
             $result = mysqli_query($link, $sql);
             if ($result) {

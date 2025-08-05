@@ -8,5 +8,18 @@ services:
     envVars:
       - key: APACHE_DOCUMENT_ROOT
         value: /var/www/html
+      # Neon PostgreSQL 資料庫配置
+      - key: DB_HOST
+        value: ep-sweet-band-a1bt630p-pooler.ap-southeast-1.aws.neon.tech
+      - key: DB_NAME
+        value: neondb
+      - key: DB_USER
+        value: neondb_owner
+      - key: DB_PASS
+        value: npg_V4H7NnEbUFyl
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_TYPE
+        value: "postgresql"
     healthCheckPath: /simple.php
     autoDeploy: true 

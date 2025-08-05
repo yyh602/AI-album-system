@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $userVal = isset($_POST["username"]) ? $_POST["username"] : "";
     $passVal = isset($_POST["password"]) ? $_POST["password"] : "";
 
-    $stmt = mysqli_prepare($link, "SELECT COUNT(*) FROM user WHERE username = ?");
+    $stmt = mysqli_prepare($link, "SELECT COUNT(*) FROM \"user\" WHERE username = ?");
     mysqli_stmt_bind_param($stmt, "s", $userVal);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_bind_result($stmt, $userCount);
@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo "<script>alert('帳號已存在，請重新輸入');</script>";
         $userVal = "";
     } else {
-        $stmt = mysqli_prepare($link, "INSERT INTO user (name, username, password) VALUES (?, ?, ?)");
+        $stmt = mysqli_prepare($link, "INSERT INTO \"user\" (name, username, password) VALUES (?, ?, ?)");
         mysqli_stmt_bind_param($stmt, "sss", $nameVal, $userVal, $passVal);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
