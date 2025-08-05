@@ -152,7 +152,7 @@ require_once("DB_close.php");
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="img/logo.png" width="32" height="32" class="me-2">
+            <img src="img/logo.svg" width="32" height="32" class="me-2">
             <span style="font-weight:bold;">AI智慧相簿管理系統</span>
         </a>
         <div class="collapse navbar-collapse">
@@ -162,7 +162,7 @@ require_once("DB_close.php");
                 <li class="nav-item"><a class="nav-link" href="ai_log.php">AI生成日誌</a></li>
             </ul>
             <div class="d-flex align-items-center ms-auto">
-                <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+                <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
                 <span class="navbar-username ms-2"><?php echo htmlspecialchars($username); ?></span>
             </div>
         </div>

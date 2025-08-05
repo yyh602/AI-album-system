@@ -266,15 +266,26 @@ require_once("DB_close.php");
         let selectedAlbumPhotos = [];
         function resetAlbumModal() {
             selectedAlbumPhotos = [];
-            document.getElementById('albumPhotoGrid').innerHTML = '<div class="upload-add-box" id="uploadAddBox">＋</div>';
-            document.getElementById('uploadStep').style.display = '';
-            document.getElementById('nameStep').style.display = 'none';
-            document.getElementById('modalConfirmBtn').style.display = 'none';
-            document.getElementById('albumNameInput').value = '';
+            const albumPhotoGrid = document.getElementById('albumPhotoGrid');
+            if (albumPhotoGrid) {
+                albumPhotoGrid.innerHTML = '<div class="upload-add-box" id="uploadAddBox">＋</div>';
+            }
+            const uploadStep = document.getElementById('uploadStep');
+            if (uploadStep) uploadStep.style.display = '';
+            const nameStep = document.getElementById('nameStep');
+            if (nameStep) nameStep.style.display = 'none';
+            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+            if (modalConfirmBtn) modalConfirmBtn.style.display = 'none';
+            const albumNameInput = document.getElementById('albumNameInput');
+            if (albumNameInput) albumNameInput.value = '';
         }
         // 動態載入我的相簿
         async function loadMyAlbums() {
             const container = document.getElementById('myAlbums');
+            if (!container) {
+                console.error('myAlbums element not found');
+                return;
+            }
             container.innerHTML = '<span style="color:#888;">載入中...</span>';
             try {
                 const res = await fetch('get_album_photos.php?all_albums=1');
@@ -317,7 +328,7 @@ require_once("DB_close.php");
                     Object.keys(data.photos_by_month).forEach(month => {
                         const photos = data.photos_by_month[month];
                         if (!photos.length) return;
-                        const cover = photos[0].path || 'img/default_album_cover.png';
+                        const cover = photos[0].path || 'img/default_album_cover.svg';
                         const monthKey = photos[0].datetime.substr(0, 7); // YYYY-MM
                         const card = document.createElement('div');
                         card.className = 'album-card-preview';
@@ -479,6 +490,10 @@ require_once("DB_close.php");
         // 修正後的 renderAlbumPhotoGrid 函式
         function renderAlbumPhotoGrid() {
             const grid = document.getElementById('albumPhotoGrid');
+            if (!grid) {
+                console.error('albumPhotoGrid element not found');
+                return;
+            }
             grid.innerHTML = ''; // 清除現有預覽
             selectedAlbumPhotos.forEach((file, idx) => {
                 const div = document.createElement('div');
