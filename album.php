@@ -172,7 +172,7 @@ require_once("DB_close.php");
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="img/logo.png" width="32" height="32" class="me-2">
+          <img src="img/logo.svg" width="32" height="32" class="me-2">
           <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -191,7 +191,7 @@ require_once("DB_close.php");
             </li>
           </ul>
           <div class="d-flex align-items-center ms-auto">
-            <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+            <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
             <span class="navbar-username"><?php echo htmlspecialchars($name); ?></span>
           </div>
         </div>
@@ -287,7 +287,7 @@ require_once("DB_close.php");
                         card.innerHTML = `
                             <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
                                 <div class="album-card-img-wrap">
-                                    <img src="${album.cover_photo || 'img/default_album_cover.png'}" alt="${album.name}">
+                                    <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}">
                                 </div>
                                 <div class="album-card-title">${album.name}</div>
                             </a>
