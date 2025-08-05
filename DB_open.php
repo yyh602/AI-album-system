@@ -6,7 +6,7 @@ $dbname = $_ENV['DB_NAME'] ?? 'myproject';
 $db_user = $_ENV['DB_USER'] ?? 'root';
 $db_pass = $_ENV['DB_PASS'] ?? 'MariaDB1688.';
 $db_port = $_ENV['DB_PORT'] ?? '3306';
-$db_type = $_ENV['DB_TYPE'] ?? 'mysql'; // 新增資料庫類型環境變數
+$db_type = $_ENV['DB_TYPE'] ?? 'postgresql'; // 強制使用 PostgreSQL
 
 // 根據資料庫類型選擇連接方式
 if ($db_type === 'postgresql' || $db_type === 'pgsql') {
@@ -50,7 +50,9 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
     
     // 檢查連線是否成功
     if ($link->connect_error) {
-        die("❌ MySQL 資料庫連線失敗：" . $link->connect_error);
+        error_log("❌ MySQL 資料庫連線失敗：" . $link->connect_error);
+        // 不要 die()，讓應用程式繼續運行
+        $link = null;
     }
     
     // 設定字符集

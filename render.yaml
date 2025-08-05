@@ -21,5 +21,5 @@ services:
         value: "5432"
       - key: DB_TYPE
         value: "postgresql"
-    healthCheckPath: /simple.php
+    healthCheckPath: /health.php
     autoDeploy: true 
