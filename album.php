@@ -304,6 +304,10 @@ require_once("DB_close.php");
         // 動態載入時間區塊（每月卡片，點擊可看該月所有照片）
         async function loadPhotosByMonth() {
             const container = document.getElementById('albumsByTime');
+            if (!container) {
+                console.log('albumsByTime element not found, skipping loadPhotosByMonth');
+                return;
+            }
             container.innerHTML = '<span style="color:#888;">載入中...</span>';
             try {
                 const res = await fetch('get_album_photos.php?group_photos_by_month=1');
@@ -469,7 +473,7 @@ require_once("DB_close.php");
             };
             // 初始載入我的相簿
             loadMyAlbums();
-            loadPhotosByMonth();
+            // loadPhotosByMonth(); // 暫時停用，因為 albumsByTime 元素不存在
         });
 
         // 修正後的 renderAlbumPhotoGrid 函式
