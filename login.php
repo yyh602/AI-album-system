@@ -1,31 +1,60 @@
 <?php
-session_start();    //啟用交談期
-$username = "";     $password = "";
+session_start();
+
+// 初始化變數
+$username = "";
+$password = "";
+$captcha_input = "";
+$login_error = false;
+
 // 取得表單欄位值
-if(isset($_POST["Username"]))
-    $username = $_POST["Username"];
-if(isset($_POST["Password"]))
-    $password = $_POST["Password"];
-// 檢查是否輸入使用者名稱和密碼
-if($username != "" && $password != ""){
-    require_once("DB_open.php");    //引入資料庫連結設定檔
-    // 建立SQL指令字串
-    $sql = "SELECT * FROM user WHERE password='";
-    $sql.= $password."' AND username='".$username."'";
-    // 執行SQL查詢
-    $result = mysqli_query($link, $sql);
-    $total_records = mysqli_num_rows($result);
-    // 是否有查詢到使用者紀錄
-    if($total_records > 0){
-        // 成功登入, 指定Session變數
-        $_SESSION["login_session"] = true;
-        $_SESSION["username"] = $username;
-        header("Location: welcome.php");
-    } else {    // 登入失敗
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (isset($_POST["Username"]))
+        $username = trim($_POST["Username"]);
+
+    if (isset($_POST["Password"]))
+        $password = $_POST["Password"];
+
+    if (isset($_POST["Captcha"]))
+        $captcha_input = strtoupper(trim($_POST["Captcha"]));
+
+    // 驗證碼比對
+    if (!isset($_SESSION["captcha"]) || $captcha_input !== $_SESSION["captcha"]) {
         $login_error = true;
-        $_SESSION["login_session"] = false;
+    } else {
+        // 檢查帳號與密碼
+        if ($username !== "" && $password !== "") {
+            require_once("DB_open.php");
+
+            // 使用 prepared statements 避免 SQL Injection
+            $stmt = mysqli_prepare($link, "SELECT username, password FROM user WHERE username = ?");
+            mysqli_stmt_bind_param($stmt, "s", $username);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_store_result($stmt);
+
+            if (mysqli_stmt_num_rows($stmt) > 0) {
+                mysqli_stmt_bind_result($stmt, $db_username, $db_hashed_password);
+                mysqli_stmt_fetch($stmt);
+
+                // 驗證密碼
+                if (password_verify($password, $db_hashed_password)) {
+                    $_SESSION["login_session"] = true;
+                    $_SESSION["username"] = $db_username;
+                    header("Location: welcome.php");
+                    exit;
+                } else {
+                    $login_error = true;
+                }
+            } else {
+                $login_error = true;
+            }
+
+            mysqli_stmt_close($stmt);
+            require_once("DB_close.php");
+        } else {
+            $login_error = true;
+        }
     }
-    require_once("DB_close.php");   //引入資料庫關閉設定檔
 }
 ?>
 
@@ -92,13 +121,14 @@ if($username != "" && $password != ""){
     </a>
   </div>
 </nav>
+
 <!-- 登入表單 -->
 <div class="container login-wrapper">
   <div class="login-box">
     <h5 class="text-center mb-4">請登入會員</h5>
-    <?php if(isset($login_error) && $login_error): ?>
+    <?php if ($login_error): ?>
       <div class="alert alert-danger py-2 text-center mb-3" role="alert">
-        <i class="fa fa-exclamation-circle me-1"></i> 使用者名稱或密碼錯誤！
+        <i class="fa fa-exclamation-circle me-1"></i> 驗證碼或帳號或密碼錯誤！
       </div>
     <?php endif; ?>
     <form action="login.php" method="post">
@@ -110,14 +140,21 @@ if($username != "" && $password != ""){
         <label for="Password" class="form-label">密碼</label>
         <input type="password" class="form-control" id="Password" name="Password" maxlength="10" required>
       </div>
+      <div class="mb-3">
+        <label for="Captcha" class="form-label">驗證碼</label>
+        <div class="d-flex align-items-center">
+          <input type="text" class="form-control me-2" id="Captcha" name="Captcha" maxlength="5" required>
+          <img src="captcha.php" alt="CAPTCHA" onclick="this.src='captcha.php?'+Math.random()" style="cursor: pointer;" title="點擊圖片可重新產生">
+        </div>
+      </div>
       <div class="d-grid">
         <button type="submit" class="btn btn-login">登入系統</button>
       </div>
     </form>
   </div>
 </div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
