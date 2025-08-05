@@ -75,26 +75,45 @@ if ($link instanceof PDO) {
         $stmt2->execute([$albumId, $photoId]);
     }
 } else {
-    // 建立相簿
-    $stmt = mysqli_prepare($link, "INSERT INTO albums (name, cover_photo, username, created_at) VALUES (?, ?, ?, NOW())");
-    mysqli_stmt_bind_param($stmt, "sss", $albumName, $coverPhoto, $username);
-    mysqli_stmt_execute($stmt);
-    $albumId = mysqli_insert_id($link);
-    mysqli_stmt_close($stmt);
-
-    // 更新剛剛上傳的圖片 album_id
-    foreach ($uploadedPhotoIds as $photoId) {
-        // 更新 uploads
-        $stmt = mysqli_prepare($link, "UPDATE uploads SET album_id = ? WHERE id = ?");
-        mysqli_stmt_bind_param($stmt, "ii", $albumId, $photoId);
+    if ($link instanceof mysqli) {
+        // 建立相簿
+        $stmt = mysqli_prepare($link, "INSERT INTO albums (name, cover_photo, username, created_at) VALUES (?, ?, ?, NOW())");
+        mysqli_stmt_bind_param($stmt, "sss", $albumName, $coverPhoto, $username);
         mysqli_stmt_execute($stmt);
+        $albumId = mysqli_insert_id($link);
         mysqli_stmt_close($stmt);
 
-        // 同步更新 photos
-        $stmt2 = mysqli_prepare($link, "UPDATE photos SET album_id = ? WHERE id = ?");
-        mysqli_stmt_bind_param($stmt2, "ii", $albumId, $photoId);
-        mysqli_stmt_execute($stmt2);
-        mysqli_stmt_close($stmt2);
+        // 更新剛剛上傳的圖片 album_id
+        foreach ($uploadedPhotoIds as $photoId) {
+            // 更新 uploads
+            $stmt = mysqli_prepare($link, "UPDATE uploads SET album_id = ? WHERE id = ?");
+            mysqli_stmt_bind_param($stmt, "ii", $albumId, $photoId);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+
+            // 同步更新 photos
+            $stmt2 = mysqli_prepare($link, "UPDATE photos SET album_id = ? WHERE id = ?");
+            mysqli_stmt_bind_param($stmt2, "ii", $albumId, $photoId);
+            mysqli_stmt_execute($stmt2);
+            mysqli_stmt_close($stmt2);
+        }
+    } else {
+        // 如果是 PDOWrapper，使用 PDO 方式
+        // 建立相簿
+        $stmt = $link->prepare("INSERT INTO albums (name, cover_photo, username, created_at) VALUES (?, ?, ?, NOW())");
+        $stmt->execute([$albumName, $coverPhoto, $username]);
+        $albumId = $link->lastInsertId();
+
+        // 更新剛剛上傳的圖片 album_id
+        foreach ($uploadedPhotoIds as $photoId) {
+            // 更新 uploads
+            $stmt = $link->prepare("UPDATE uploads SET album_id = ? WHERE id = ?");
+            $stmt->execute([$albumId, $photoId]);
+
+            // 同步更新 photos
+            $stmt2 = $link->prepare("UPDATE photos SET album_id = ? WHERE id = ?");
+            $stmt2->execute([$albumId, $photoId]);
+        }
     }
 }
 

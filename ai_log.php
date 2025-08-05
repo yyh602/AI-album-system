@@ -19,15 +19,27 @@ if ($link instanceof PDO) {
         $name = $row['name'];
     }
 } else {
-    $sql = "SELECT name FROM user WHERE username = ?";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $username);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $result_name);
-    if (mysqli_stmt_fetch($stmt)) {
-        $name = $result_name;
+    if ($link instanceof mysqli) {
+        $sql = "SELECT name FROM \"user\" WHERE username = ?";
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt, "s", $username);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $result_name);
+        if (mysqli_stmt_fetch($stmt)) {
+            $name = $result_name;
+        }
+        mysqli_stmt_close($stmt);
+    } else {
+        // 如果是 PDOWrapper，使用 PDO 方式查詢
+        $sql = "SELECT name FROM \"user\" WHERE username = ?";
+        $stmt = $link->prepare($sql);
+        $stmt->execute([$username]);
+        $result = $stmt->fetch();
+        
+        if ($result) {
+            $name = $result['name'];
+        }
     }
-    mysqli_stmt_close($stmt);
 }
 require_once("DB_close.php"); // 確保你的資料庫關閉檔案存在且正確
 
@@ -102,15 +114,25 @@ if ($link instanceof PDO) {
         $diaries[] = $row;
     }
 } else {
-    $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
-    $diary_stmt = mysqli_prepare($link, $diary_sql);
-    mysqli_stmt_bind_param($diary_stmt, "s", $username);
-    mysqli_stmt_execute($diary_stmt);
-    $diary_result = mysqli_stmt_get_result($diary_stmt);
-    while ($row = mysqli_fetch_assoc($diary_result)) {
-        $diaries[] = $row;
+    if ($link instanceof mysqli) {
+        $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
+        $diary_stmt = mysqli_prepare($link, $diary_sql);
+        mysqli_stmt_bind_param($diary_stmt, "s", $username);
+        mysqli_stmt_execute($diary_stmt);
+        $diary_result = mysqli_stmt_get_result($diary_stmt);
+        while ($row = mysqli_fetch_assoc($diary_result)) {
+            $diaries[] = $row;
+        }
+        mysqli_stmt_close($diary_stmt);
+    } else {
+        // 如果是 PDOWrapper，使用 PDO 方式查詢
+        $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
+        $diary_stmt = $link->prepare($diary_sql);
+        $diary_stmt->execute([$username]);
+        while ($row = $diary_stmt->fetch(PDO::FETCH_ASSOC)) {
+            $diaries[] = $row;
+        }
     }
-    mysqli_stmt_close($diary_stmt);
 }
 require_once("DB_close.php");
 ?>

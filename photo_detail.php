@@ -10,19 +10,35 @@ require_once("DB_open.php");
 $photoId = $_GET["photo_id"] ?? 0;
 $username = $_SESSION["username"];
 
-$sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
-        FROM uploads u 
-        JOIN albums a ON u.album_id = a.id 
-        WHERE u.id = ? AND a.username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "is", $photoId, $username);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-$photo = mysqli_fetch_assoc($result);
+if ($link instanceof mysqli) {
+    $sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
+            FROM uploads u 
+            JOIN albums a ON u.album_id = a.id 
+            WHERE u.id = ? AND a.username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "is", $photoId, $username);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $photo = mysqli_fetch_assoc($result);
 
-if (!$photo) {
-    echo "找不到照片或您沒有權限查看此照片。";
-    exit();
+    if (!$photo) {
+        echo "找不到照片或您沒有權限查看此照片。";
+        exit();
+    }
+} else {
+    // 如果是 PDOWrapper，使用 PDO 方式查詢
+    $sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
+            FROM uploads u 
+            JOIN albums a ON u.album_id = a.id 
+            WHERE u.id = ? AND a.username = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$photoId, $username]);
+    $photo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$photo) {
+        echo "找不到照片或您沒有權限查看此照片。";
+        exit();
+    }
 }
 
 require_once("DB_close.php");
