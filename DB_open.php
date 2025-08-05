@@ -16,28 +16,34 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
         $link = new PDO($dsn);
         $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         // 為了保持與現有 mysqli 程式碼相容，我們創建一個包裝類
-        class PDOWrapper {
-            private $pdo;
-            
-            public function __construct($pdo) {
-                $this->pdo = $pdo;
-            }
-            
-            public function prepare($sql) {
-                return $this->pdo->prepare($sql);
-            }
-            
-            public function query($sql) {
-                return $this->pdo->query($sql);
-            }
-            
-            public function connect_error() {
-                return false; // PDO 會拋出異常，所以沒有 connect_error
-            }
-            
-            public function set_charset($charset) {
-                // PostgreSQL 不需要設定字符集
-                return true;
+        if (!class_exists('PDOWrapper')) {
+            class PDOWrapper {
+                private $pdo;
+                
+                public function __construct($pdo) {
+                    $this->pdo = $pdo;
+                }
+                
+                public function prepare($sql) {
+                    return $this->pdo->prepare($sql);
+                }
+                
+                public function query($sql) {
+                    return $this->pdo->query($sql);
+                }
+                
+                public function connect_error() {
+                    return false; // PDO 會拋出異常，所以沒有 connect_error
+                }
+                
+                public function set_charset($charset) {
+                    // PostgreSQL 不需要設定字符集
+                    return true;
+                }
+                
+                public function lastInsertId() {
+                    return $this->pdo->lastInsertId();
+                }
             }
         }
         $link = new PDOWrapper($link);
