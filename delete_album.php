@@ -28,92 +28,47 @@ if ($albumId <= 0) {
 }
 
 require_once("DB_open.php");
-require_once("DB_helper.php");
 
 // 驗證相簿所有權
-if ($link instanceof PDO) {
-    $sql = "SELECT id, name FROM albums WHERE id = ? AND username = ?";
-    $stmt = $link->prepare($sql);
-    $stmt->execute([$albumId, $username]);
-    $album = $stmt->fetch(PDO::FETCH_ASSOC);
+$sql = "SELECT id, name FROM albums WHERE id = ? AND username = ?";
+$stmt = mysqli_prepare($link, $sql);
+mysqli_stmt_bind_param($stmt, "is", $albumId, $username);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$album = mysqli_fetch_assoc($result);
 
-    if (!$album) {
-        http_response_code(403);
-        echo json_encode(["status" => "error", "message" => "無權刪除此相簿或相簿不存在"]);
-        exit();
-    }
+if (!$album) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "無權刪除此相簿或相簿不存在"]);
+    exit();
+}
 
-    // 開始事務
-    $link->beginTransaction();
+// 開始事務
+mysqli_begin_transaction($link);
 
-    try {
-        // 獲取相簿中所有照片的路徑以便刪除檔案
-        $sql = "SELECT path FROM photos WHERE album_id = ?";
-        $stmt = $link->prepare($sql);
-        $stmt->execute([$albumId]);
-        $photos_to_delete = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // 刪除相簿中的所有照片資料庫記錄
-        $sql = "DELETE FROM photos WHERE album_id = ?";
-        $stmt = $link->prepare($sql);
-        $stmt->execute([$albumId]);
-
-        // 刪除相簿資料庫記錄
-        $sql = "DELETE FROM albums WHERE id = ?";
-        $stmt = $link->prepare($sql);
-        $stmt->execute([$albumId]);
-
-        // 提交事務
-        $link->commit();
-    } catch (Exception $e) {
-        $link->rollback();
-        throw $e;
-    }
-} else {
-    $sql = "SELECT id, name FROM albums WHERE id = ? AND username = ?";
+try {
+    // 獲取相簿中所有照片的路徑以便刪除檔案
+    $sql = "SELECT path FROM photos WHERE album_id = ?";
     $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "is", $albumId, $username);
+    mysqli_stmt_bind_param($stmt, "i", $albumId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
-    $album = mysqli_fetch_assoc($result);
+    $photos_to_delete = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-    if (!$album) {
-        http_response_code(403);
-        echo json_encode(["status" => "error", "message" => "無權刪除此相簿或相簿不存在"]);
-        exit();
-    }
+    // 刪除相簿中的所有照片資料庫記錄
+    $sql = "DELETE FROM photos WHERE album_id = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $albumId);
+    mysqli_stmt_execute($stmt);
 
-    // 開始事務
-    mysqli_begin_transaction($link);
+    // 刪除相簿資料庫記錄
+    $sql = "DELETE FROM albums WHERE id = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $albumId);
+    mysqli_stmt_execute($stmt);
 
-    try {
-        // 獲取相簿中所有照片的路徑以便刪除檔案
-        $sql = "SELECT path FROM photos WHERE album_id = ?";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $albumId);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        $photos_to_delete = mysqli_fetch_all($result, MYSQLI_ASSOC);
-
-        // 刪除相簿中的所有照片資料庫記錄
-        $sql = "DELETE FROM photos WHERE album_id = ?";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $albumId);
-        mysqli_stmt_execute($stmt);
-
-        // 刪除相簿資料庫記錄
-        $sql = "DELETE FROM albums WHERE id = ?";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $albumId);
-        mysqli_stmt_execute($stmt);
-
-        // 提交事務
-        mysqli_commit($link);
-    } catch (Exception $e) {
-        mysqli_rollback($link);
-        throw $e;
-    }
-}
+    // 提交事務
+    mysqli_commit($link);
 
     // 刪除實際的檔案和目錄 (在提交資料庫事務後執行，避免資料庫刪成功但檔案刪失敗)
     foreach ($photos_to_delete as $photo) {
