@@ -25,25 +25,38 @@ try {
     echo "Type: $db_type<br>";
     
     if ($db_type === 'postgresql' || $db_type === 'pgsql') {
-        // PostgreSQL 連接
-        $cleanHost = explode('?', $host)[0];
-        $endpointId = explode('.', $cleanHost)[0];
+        // 修正 Neon 資料庫連線 - 使用正確的連線格式
+        // 如果主機名稱不完整，添加完整的域名
+        if (strpos($host, '.neon.tech') === false) {
+            $host = $host . '.neon.tech';
+            echo "修正後的主機名稱：$host<br>";
+        }
         
-        $dsn = "pgsql:host=$cleanHost;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
+        // 從主機名稱提取 endpoint ID
+        $endpointId = explode('.', $host)[0];
+        echo "Endpoint ID：$endpointId<br>";
+        
+        // 使用正確的 Neon 連線字串格式，包含 channel_binding 參數
+        $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;channel_binding=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
         echo "DSN: $dsn<br>";
         
         $pdo = new PDO($dsn);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
         echo "✅ PostgreSQL connection successful!<br>";
-        $stmt = $pdo->query("SELECT current_database() as db_name");
+        $stmt = $pdo->query("SELECT current_database() as db_name, version() as version");
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         echo "Database: " . $row['db_name'] . "<br>";
+        echo "PostgreSQL version: " . $row['version'] . "<br>";
         
         // 測試查詢
-        $stmt = $pdo->query("SELECT COUNT(*) as count FROM \"user\"");
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        echo "Users in database: " . $row['count'] . "<br>";
+        try {
+            $stmt = $pdo->query("SELECT COUNT(*) as count FROM \"user\"");
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo "Users in database: " . $row['count'] . "<br>";
+        } catch (Exception $e) {
+            echo "⚠️ user 表不存在或無法查詢：" . $e->getMessage() . "<br>";
+        }
     } else {
         // MySQL 連接
         $link = new mysqli($host, $db_user, $db_pass, $dbname, $db_port);
