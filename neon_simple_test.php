@@ -44,7 +44,8 @@ try {
     
     // 方法 2：使用 options 參數
     echo "<h3>方法 2：使用 options 參數</h3>";
-    $endpointId = explode('.', $host)[0];
+    $hostParts = explode('.', $host);
+    $endpointId = str_replace('-pooler', '', $hostParts[0]);
     $dsn2 = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
     echo "DSN: $dsn2<br>";
     

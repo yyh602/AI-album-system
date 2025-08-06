@@ -21,8 +21,9 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
             $host = $host . '.neon.tech';
         }
         
-        // 從主機名稱提取 endpoint ID
-        $endpointId = explode('.', $host)[0];
+        // 從主機名稱提取 endpoint ID - 移除 -pooler 後綴
+        $hostParts = explode('.', $host);
+        $endpointId = str_replace('-pooler', '', $hostParts[0]);
         
         // 使用正確的 Neon 連線字串格式，將 channel_binding 放在 options 參數中
         $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId&channel_binding%3Drequire;user=$db_user;password=$db_pass";
