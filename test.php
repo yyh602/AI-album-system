@@ -16,14 +16,31 @@ try {
     $db_user = $_ENV['DB_USER'] ?? 'root';
     $db_pass = $_ENV['DB_PASS'] ?? 'MariaDB1688.';
     $db_port = $_ENV['DB_PORT'] ?? '3306';
+    $db_type = $_ENV['DB_TYPE'] ?? 'postgresql';
     
-    $link = new mysqli($host, $db_user, $db_pass, $dbname, $db_port);
-    
-    if ($link->connect_error) {
-        echo "❌ 資料庫連接失敗: " . $link->connect_error;
+    if ($db_type === 'postgresql' || $db_type === 'pgsql') {
+        // PostgreSQL 連接
+        $cleanHost = explode('?', $host)[0];
+        $endpointId = explode('.', $cleanHost)[0];
+        
+        $dsn = "pgsql:host=$cleanHost;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
+        $pdo = new PDO($dsn);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        
+        echo "✅ PostgreSQL 資料庫連接成功！<br>";
+        $stmt = $pdo->query("SELECT current_database() as db_name");
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        echo "資料庫名稱: " . $row['db_name'];
     } else {
-        echo "✅ 資料庫連接成功！<br>";
-        echo "資料庫名稱: " . $link->query("SELECT DATABASE()")->fetch_row()[0];
+        // MySQL 連接
+        $link = new mysqli($host, $db_user, $db_pass, $dbname, $db_port);
+        
+        if ($link->connect_error) {
+            echo "❌ MySQL 資料庫連接失敗: " . $link->connect_error;
+        } else {
+            echo "✅ MySQL 資料庫連接成功！<br>";
+            echo "資料庫名稱: " . $link->query("SELECT DATABASE()")->fetch_row()[0];
+        }
     }
 } catch (Exception $e) {
     echo "❌ 連接異常: " . $e->getMessage();

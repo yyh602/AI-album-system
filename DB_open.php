@@ -11,13 +11,11 @@ $db_type = $_ENV['DB_TYPE'] ?? 'postgresql'; // 強制使用 PostgreSQL
 // 根據資料庫類型選擇連接方式
 if ($db_type === 'postgresql' || $db_type === 'pgsql') {
     // PostgreSQL 連接 (Neon 專用)
-    // 檢查是否已經包含 endpoint 參數
-    if (strpos($host, '?options=endpoint%3D') === false) {
-        // 從主機名稱提取 endpoint ID
-        $endpointId = explode('.', $host)[0];
-        $host = $host . "?options=endpoint%3D" . $endpointId;
-    }
-    $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;user=$db_user;password=$db_pass";
+    // 從主機名稱提取 endpoint ID (移除查詢參數)
+    $cleanHost = explode('?', $host)[0];
+    $endpointId = explode('.', $cleanHost)[0];
+    
+    $dsn = "pgsql:host=$cleanHost;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
     try {
         $link = new PDO($dsn);
         $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

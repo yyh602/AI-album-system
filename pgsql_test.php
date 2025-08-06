@@ -22,7 +22,11 @@ echo "Port: $db_port<br>";
 // 測試 PostgreSQL 連接
 echo "<h2>PostgreSQL Connection Test:</h2>";
 try {
-    $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;user=$db_user;password=$db_pass";
+    // 從主機名稱提取 endpoint ID (移除查詢參數)
+    $cleanHost = explode('?', $host)[0];
+    $endpointId = explode('.', $cleanHost)[0];
+    
+    $dsn = "pgsql:host=$cleanHost;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
     echo "DSN: $dsn<br>";
     
     $pdo = new PDO($dsn);
