@@ -33,8 +33,8 @@ try {
     $endpointId = explode('.', $host)[0];
     echo "Endpoint ID：$endpointId<br>";
     
-    // 使用正確的 Neon 連線字串格式，包含 channel_binding 參數
-    $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;channel_binding=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
+    // 使用正確的 Neon 連線字串格式，將 channel_binding 放在 options 參數中
+    $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId&channel_binding%3Drequire;user=$db_user;password=$db_pass";
     echo "DSN: $dsn<br>";
     
     $pdo = new PDO($dsn);
