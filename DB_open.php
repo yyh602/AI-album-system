@@ -11,11 +11,22 @@ $db_type = $_ENV['DB_TYPE'] ?? 'postgresql'; // 強制使用 PostgreSQL
 // 根據資料庫類型選擇連接方式
 if ($db_type === 'postgresql' || $db_type === 'pgsql') {
     // PostgreSQL 連接 (Neon 專用)
-    // 從主機名稱提取 endpoint ID (移除查詢參數)
-    $cleanHost = explode('?', $host)[0];
-    $endpointId = explode('.', $cleanHost)[0];
-    
-    $dsn = "pgsql:host=$cleanHost;port=$db_port;dbname=$dbname;sslmode=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
+    // 檢查是否有完整的 DSN
+    if (isset($_ENV['DB_DSN'])) {
+        $dsn = $_ENV['DB_DSN'];
+    } else {
+        // 修正 Neon 資料庫連線 - 使用正確的連線格式
+        // 如果主機名稱不完整，添加完整的域名
+        if (strpos($host, '.neon.tech') === false) {
+            $host = $host . '.neon.tech';
+        }
+        
+        // 從主機名稱提取 endpoint ID
+        $endpointId = explode('.', $host)[0];
+        
+        // 使用正確的 Neon 連線字串格式，包含 channel_binding 參數
+        $dsn = "pgsql:host=$host;port=$db_port;dbname=$dbname;sslmode=require;channel_binding=require;options=endpoint%3D$endpointId;user=$db_user;password=$db_pass";
+    }
     try {
         $link = new PDO($dsn);
         $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
