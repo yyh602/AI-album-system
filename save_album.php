@@ -1,11 +1,26 @@
 <?php
+// 設定錯誤處理，避免干擾 JSON 輸出
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
+// 設定 JSON header
+header('Content-Type: application/json');
+
 // 檢查 session 狀態，避免重複啟動
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-require_once("DB_open.php");
-require_once("DB_helper.php");
-header('Content-Type: application/json');
+
+try {
+    require_once("DB_open.php");
+    require_once("DB_helper.php");
+} catch (Exception $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => '資料庫連線失敗: ' . $e->getMessage()
+    ]);
+    exit();
+}
 
 // GPS 座標轉換函數
 function convertGPS($coordinate) {
