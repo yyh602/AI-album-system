@@ -169,10 +169,14 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
     if (strpos($host, '.mysql.database.azure.com') !== false) {
         $link->ssl_set(null, null, null, null, null);
         $link->options(MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+        $link->options(MYSQLI_OPT_CONNECT_ATTR_ADD, ['_client_name' => 'php']);
+        
+        // 使用 SSL 連線
+        $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port, null, MYSQLI_CLIENT_SSL);
+    } else {
+        // 非 Azure MySQL 的一般連線
+        $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
     }
-    
-    // 連接到資料庫
-    $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
     
     // 檢查連線是否成功
     if ($link->connect_error) {

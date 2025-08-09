@@ -12,12 +12,13 @@ try {
     // 建立連線
     $link = new mysqli();
     
-    // 設定 SSL
+    // 強制 SSL 設定 (Azure MySQL 必須)
     $link->ssl_set(null, null, null, null, null);
     $link->options(MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+    $link->options(MYSQLI_OPT_CONNECT_ATTR_ADD, ['_client_name' => 'php']);
     
-    // 連線
-    $result = $link->real_connect($host, $username, $password, $database, $port);
+    // 使用 SSL 連線 (加入 MYSQLI_CLIENT_SSL 旗標)
+    $result = $link->real_connect($host, $username, $password, $database, $port, null, MYSQLI_CLIENT_SSL);
     
     if (!$result) {
         throw new Exception("連線失敗：" . $link->connect_error);
