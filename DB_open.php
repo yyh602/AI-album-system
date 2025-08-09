@@ -8,8 +8,8 @@ $db_pass = $_ENV['DB_PASS'] ?? 'Aa123456'; // 預設密碼
 $db_port = $_ENV['DB_PORT'] ?? '3306';
 $db_type = $_ENV['DB_TYPE'] ?? 'mysql';
 
-// 根據資料庫類型選擇連接方式
-if ($db_type === 'postgresql' || $db_type === 'pgsql') {
+// 強制使用 MySQL (停用 PostgreSQL)
+if (false) { // 停用 PostgreSQL 邏輯
     // PostgreSQL 連接 (Neon 專用) - 使用原生 pgsql 函數
     // 如果主機名稱不完整，添加完整的域名
     if (strpos($host, '.neon.tech') === false) {
@@ -192,20 +192,12 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
 }
 
 // 紀錄目前使用的資料庫（只有在連線成功時）
-if ($link !== null) {
-    if ($db_type === 'postgresql' || $db_type === 'pgsql') {
-        $currentDb = $link->query("SELECT current_database()");
-        if ($currentDb) {
-            $row = $currentDb->fetch();
-            error_log('【目前連線資料庫】：' . $row[0]);
-        }
-    } else {
-        $currentDb = $link->query("SELECT DATABASE()");
-        if ($currentDb) {
-            $row = $currentDb->fetch_row();
-            error_log('【目前連線資料庫】：' . $row[0]);
-        }
+if ($link !== null && $link instanceof mysqli) {
+    $currentDb = $link->query("SELECT DATABASE()");
+    if ($currentDb) {
+        $row = $currentDb->fetch_row();
+        error_log('【目前連線資料庫】：' . $row[0]);
     }
 } else {
-    error_log('【資料庫連線】：連線失敗，$link 為 null');
+    error_log('【資料庫連線】：連線失敗，$link 為 null 或非 mysqli 實例');
 }

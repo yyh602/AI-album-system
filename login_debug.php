@@ -1,83 +1,109 @@
 <?php
-session_start();
-header('Content-Type: text/html; charset=utf-8');
+// 測試登入頁面 - 顯示詳細錯誤信息
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-echo "<h1>登入除錯</h1>";
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
-// 檢查 POST 資料
-echo "<h2>POST 資料：</h2>";
-echo "<pre>";
-print_r($_POST);
-echo "</pre>";
+echo "<h1>登入測試頁面</h1>";
 
-if(isset($_POST["Username"]) && isset($_POST["Password"])) {
-    $username = $_POST["Username"];
-    $password = $_POST["Password"];
-    
-    echo "<h2>接收到的資料：</h2>";
-    echo "帳號: " . htmlspecialchars($username) . "<br>";
-    echo "密碼: " . htmlspecialchars($password) . "<br>";
-    
-    // 測試資料庫連接
+// 測試環境變數
+echo "<h2>環境變數：</h2>";
+echo "DB_HOST: " . ($_ENV['DB_HOST'] ?? '未設定') . "<br>";
+echo "DB_NAME: " . ($_ENV['DB_NAME'] ?? '未設定') . "<br>";
+echo "DB_USER: " . ($_ENV['DB_USER'] ?? '未設定') . "<br>";
+echo "DB_TYPE: " . ($_ENV['DB_TYPE'] ?? '未設定') . "<br>";
+
+// 測試資料庫連線
+echo "<h2>資料庫連線測試：</h2>";
+try {
     require_once("DB_open.php");
     
-    echo "<h2>資料庫連接測試：</h2>";
-    if ($link) {
-        echo "✅ 資料庫連接成功<br>";
+    if ($link instanceof mysqli && $link !== null) {
+        echo "✅ MySQL 連線成功！<br>";
         
-        // 測試查詢
-        if ($link instanceof PDO) {
-            $sql = "SELECT * FROM \"user\" WHERE username = ?";
-            $stmt = $link->prepare($sql);
-            $stmt->execute([$username]);
-            $user = $stmt->fetch('ASSOC');
-            
-            echo "<h2>用戶查詢結果：</h2>";
-            echo "<pre>";
-            print_r($user);
-            echo "</pre>";
-            
-            if ($user) {
-                echo "<h2>密碼比較：</h2>";
-                echo "資料庫中的密碼: " . htmlspecialchars($user['password']) . "<br>";
-                echo "輸入的密碼: " . htmlspecialchars($password) . "<br>";
-                echo "密碼是否匹配: " . ($user['password'] === $password ? "✅ 是" : "❌ 否") . "<br>";
-            } else {
-                echo "❌ 找不到用戶<br>";
-            }
+        // 測試用戶表查詢
+        $test_sql = "SELECT COUNT(*) as count FROM user";
+        $result = $link->query($test_sql);
+        if ($result) {
+            $row = $result->fetch_assoc();
+            echo "✅ 用戶表查詢成功，共有 " . $row['count'] . " 個用戶<br>";
         } else {
-            $sql = "SELECT * FROM \"user\" WHERE username = ?";
-            $stmt = mysqli_prepare($link, $sql);
-            mysqli_stmt_bind_param($stmt, "s", $username);
+            echo "❌ 用戶表查詢失敗: " . $link->error . "<br>";
+        }
+        
+        // 測試特定用戶
+        $username = 'admin';
+        $password = 'admin123';
+        $sql = "SELECT * FROM user WHERE password = ? AND username = ?";
+        $stmt = mysqli_prepare($link, $sql);
+        
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "ss", $password, $username);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
-            $user = mysqli_fetch_assoc($result);
             
-            echo "<h2>用戶查詢結果：</h2>";
-            echo "<pre>";
-            print_r($user);
-            echo "</pre>";
-            
-            if ($user) {
-                echo "<h2>密碼比較：</h2>";
-                echo "資料庫中的密碼: " . htmlspecialchars($user['password']) . "<br>";
-                echo "輸入的密碼: " . htmlspecialchars($password) . "<br>";
-                echo "密碼是否匹配: " . ($user['password'] === $password ? "✅ 是" : "❌ 否") . "<br>";
+            if ($result && mysqli_num_rows($result) > 0) {
+                echo "✅ 測試用戶 (admin/admin123) 驗證成功！<br>";
+                $user_data = mysqli_fetch_assoc($result);
+                echo "用戶資料: " . json_encode($user_data) . "<br>";
             } else {
-                echo "❌ 找不到用戶<br>";
+                echo "❌ 測試用戶驗證失敗<br>";
             }
+            mysqli_stmt_close($stmt);
+        } else {
+            echo "❌ SQL prepare 失敗: " . mysqli_error($link) . "<br>";
         }
     } else {
-        echo "❌ 資料庫連接失敗<br>";
+        echo "❌ 資料庫連線失敗！<br>";
+        var_dump($link);
     }
-    
-    require_once("DB_close.php");
-} else {
-    echo "<h2>請先提交登入表單</h2>";
-    echo '<form method="post">';
-    echo '帳號: <input type="text" name="Username" value="1411131016"><br>';
-    echo '密碼: <input type="password" name="Password" value="8745"><br>';
-    echo '<input type="submit" value="測試登入">';
-    echo '</form>';
+} catch (Exception $e) {
+    echo "❌ 錯誤: " . $e->getMessage() . "<br>";
 }
-?> 
+
+// 處理登入表單
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+    
+    echo "<h2>登入嘗試：</h2>";
+    echo "用戶名: $username<br>";
+    echo "密碼: $password<br>";
+    
+    if ($username && $password && isset($link) && $link instanceof mysqli) {
+        $sql = "SELECT * FROM user WHERE password = ? AND username = ?";
+        $stmt = mysqli_prepare($link, $sql);
+        
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "ss", $password, $username);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            
+            if ($result && mysqli_num_rows($result) > 0) {
+                echo "✅ 登入成功！<br>";
+                $_SESSION["login_session"] = true;
+                $_SESSION["username"] = $username;
+                echo '<a href="welcome.php">前往 welcome.php</a><br>';
+            } else {
+                echo "❌ 用戶名或密碼錯誤<br>";
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
+}
+?>
+
+<h2>測試登入表單：</h2>
+<form method="POST">
+    用戶名: <input type="text" name="username" value="admin"><br><br>
+    密碼: <input type="password" name="password" value="admin123"><br><br>
+    <input type="submit" value="測試登入">
+</form>
+
+<h2>快速連結：</h2>
+<a href="login.php">原始 login.php</a><br>
+<a href="welcome.php">welcome.php</a><br>
+<a href="test_mysql_connection.php">MySQL 連線測試</a>
