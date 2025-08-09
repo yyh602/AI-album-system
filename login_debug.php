@@ -9,6 +9,13 @@ if (session_status() == PHP_SESSION_NONE) {
 
 echo "<h1>登入測試頁面</h1>";
 
+// 顯示 PHP 版本和擴展信息
+echo "<h2>PHP 環境：</h2>";
+echo "PHP 版本: " . phpversion() . "<br>";
+echo "mysqli 擴展: " . (extension_loaded('mysqli') ? '✅ 已載入' : '❌ 未載入') . "<br>";
+echo "MYSQLI_CLIENT_SSL 常數: " . (defined('MYSQLI_CLIENT_SSL') ? '✅ 支援' : '❌ 不支援') . "<br>";
+echo "MYSQLI_OPT_SSL_VERIFY_SERVER_CERT 常數: " . (defined('MYSQLI_OPT_SSL_VERIFY_SERVER_CERT') ? '✅ 支援' : '❌ 不支援') . "<br>";
+
 // 測試環境變數
 echo "<h2>環境變數：</h2>";
 echo "DB_HOST: " . ($_ENV['DB_HOST'] ?? '未設定') . "<br>";

@@ -165,17 +165,22 @@ if (false) { // 停用 PostgreSQL 邏輯
     // MySQL/MariaDB 連接（支援 Azure MySQL SSL）
     $link = new mysqli();
     
-    // 如果是 Azure MySQL，設定 SSL
-    if (strpos($host, '.mysql.database.azure.com') !== false) {
-        $link->ssl_set(null, null, null, null, null);
-        $link->options(MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
-        $link->options(MYSQLI_OPT_CONNECT_ATTR_ADD, ['_client_name' => 'php']);
+    // 嘗試標準連線（Azure MySQL 應該會自動處理 SSL）
+    $success = $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
+    
+    // 如果標準連線失敗且是 Azure MySQL，嘗試強制 SSL
+    if (!$success && strpos($host, '.mysql.database.azure.com') !== false) {
+        error_log("標準連線失敗，嘗試 SSL 連線...");
+        $link = new mysqli(); // 重新建立連線物件
         
-        // 使用 SSL 連線
-        $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port, null, MYSQLI_CLIENT_SSL);
-    } else {
-        // 非 Azure MySQL 的一般連線
-        $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
+        // 嘗試基本 SSL 設定
+        try {
+            $link->ssl_set(null, null, null, null, null);
+            $ssl_flag = defined('MYSQLI_CLIENT_SSL') ? MYSQLI_CLIENT_SSL : 2048; // 手動設定 SSL flag
+            $success = $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port, null, $ssl_flag);
+        } catch (Exception $e) {
+            error_log("SSL 連線嘗試失敗: " . $e->getMessage());
+        }
     }
     
     // 檢查連線是否成功
