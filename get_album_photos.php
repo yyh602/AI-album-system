@@ -1,5 +1,8 @@
 <?php
-session_start();
+// 檢查 session 狀態，避免重複啟動
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION["username"])) {
     header("Location: login.php");

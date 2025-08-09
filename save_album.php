@@ -1,5 +1,8 @@
 <?php
-session_start();
+// 檢查 session 狀態，避免重複啟動
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once("DB_open.php");
 require_once("DB_helper.php");
 header('Content-Type: application/json');
@@ -18,9 +21,8 @@ function convertGPS($coordinate) {
     return null;
 }
 
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
-    $link->exec("SET NAMES utf8mb4");
-} elseif ($link instanceof mysqli) {
+// 設定字符集（PostgreSQL 預設就是 UTF-8）
+if ($link instanceof mysqli) {
     mysqli_set_charset($link, "utf8mb4");
 }
 
