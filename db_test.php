@@ -46,14 +46,14 @@ try {
         
         echo "✅ PostgreSQL connection successful!<br>";
         $stmt = $pdo->query("SELECT current_database() as db_name, version() as version");
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch('ASSOC');
         echo "Database: " . $row['db_name'] . "<br>";
         echo "PostgreSQL version: " . $row['version'] . "<br>";
         
         // 測試查詢
         try {
             $stmt = $pdo->query("SELECT COUNT(*) as count FROM \"user\"");
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch('ASSOC');
             echo "Users in database: " . $row['count'] . "<br>";
         } catch (Exception $e) {
             echo "⚠️ user 表不存在或無法查詢：" . $e->getMessage() . "<br>";

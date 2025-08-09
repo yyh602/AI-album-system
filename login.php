@@ -29,8 +29,11 @@ if($username != "" && $password != ""){
             // 為了兼容性，使用不同的方法計算記錄數
             if ($link instanceof PgSQLWrapper) {
                 // 對於 PgSQLWrapper，需要重新查詢計算記錄數
-                $count_sql = "SELECT COUNT(*) FROM \"user\" WHERE password = '" . pg_escape_string($password) . "' AND username = '" . pg_escape_string($username) . "'";
-                $count_result = $link->query($count_sql);
+                // 使用 prepared statement 避免 pg_escape_string 警告
+                $count_sql = "SELECT COUNT(*) FROM \"user\" WHERE password = ? AND username = ?";
+                $count_stmt = $link->prepare($count_sql);
+                $count_stmt->execute([$password, $username]);
+                $count_result = $count_stmt;
                 $count_row = $count_result->fetch_row();
                 $total_records = $count_row[0];
             } else {

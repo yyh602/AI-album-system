@@ -116,25 +116,26 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
                 
                 public function execute($params = []) {
                     $sql = $this->sql;
-                    // 簡單的參數替換（實際專案中建議使用 pg_prepare）
+                    // 簡單的參數替換（修復 pg_escape_string 警告）
                     foreach ($params as $param) {
-                        $sql = preg_replace('/\?/', "'" . pg_escape_string($this->pg_connection, $param) . "'", $sql, 1);
+                        $escaped_param = pg_escape_string($this->pg_connection, (string)$param);
+                        $sql = preg_replace('/\?/', "'" . $escaped_param . "'", $sql, 1);
                     }
                     $this->result = pg_query($this->pg_connection, $sql);
                     return $this->result;
                 }
                 
-                public function fetch($mode = PDO::FETCH_ASSOC) {
+                public function fetch($mode = 'ASSOC') {
                     if (!$this->result) return false;
                     
-                    if ($mode == PDO::FETCH_ASSOC) {
+                    if ($mode == 'ASSOC') {
                         return pg_fetch_assoc($this->result);
                     } else {
                         return pg_fetch_array($this->result);
                     }
                 }
                 
-                public function fetchAll($mode = PDO::FETCH_ASSOC) {
+                public function fetchAll($mode = 'ASSOC') {
                     if (!$this->result) return [];
                     
                     $rows = [];
@@ -152,7 +153,8 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
         }
         $link = new PgSQLWrapper($pg_connection);
     } catch (Exception $e) {
-        die("❌ PostgreSQL 資料庫連線失敗：" . $e->getMessage());
+        error_log("❌ PostgreSQL 資料庫連線失敗：" . $e->getMessage());
+        $link = null; // 設為 null 而不是 die()
     }
 } else {
     // MySQL/MariaDB 連接（保持原有邏輯）

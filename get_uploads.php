@@ -18,7 +18,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);
     $photos = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    while ($row = $stmt->fetch('ASSOC')) {
         $photos[] = [
             'filename' => $row['filename'],
             'datetime' => $row['datetime'],
@@ -58,7 +58,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $stmt = $link->prepare($sql);
         $stmt->execute([$username]);
         $photos = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch('ASSOC')) {
             $photos[] = [
                 'filename' => $row['filename'],
                 'datetime' => $row['datetime'],

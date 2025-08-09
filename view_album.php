@@ -37,7 +37,7 @@ if ($link instanceof mysqli) {
     $sql = "SELECT id, name, username FROM albums WHERE id = ? AND username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$albumId, $username]);
-    $album = $stmt->fetch(PDO::FETCH_ASSOC);
+    $album = $stmt->fetch('ASSOC');
 
     if (!$album) {
         header("Location: album.php");
@@ -48,7 +48,7 @@ if ($link instanceof mysqli) {
     $sql = "SELECT * FROM uploads WHERE album_id = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$albumId]);
-    $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $photos = $stmt->fetchAll('ASSOC');
 }
 
 // 計算旅遊期間

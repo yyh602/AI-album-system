@@ -22,17 +22,17 @@ $sql = "SELECT filename, datetime, latitude, longitude, uploaded_at
 
 $stmt = mysqli_prepare($link, $sql);
 if (!$stmt) {
-    die("查詢準備失敗：" . mysqli_error($link));
+    error_log("查詢準備失敗：" . mysqli_error($link)); return;
 }
 
 mysqli_stmt_bind_param($stmt, "s", $username);
 if (!mysqli_stmt_execute($stmt)) {
-    die("查詢執行失敗：" . mysqli_stmt_error($stmt));
+    error_log("查詢執行失敗：" . mysqli_stmt_error($stmt)); return;
 }
 
 $result = mysqli_stmt_get_result($stmt);
 if (!$result) {
-    die("獲取結果失敗：" . mysqli_error($link));
+    error_log("獲取結果失敗：" . mysqli_error($link)); return;
 }
 
 require_once("DB_close.php");   //引入資料庫關閉設定檔

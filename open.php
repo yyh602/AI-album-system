@@ -11,15 +11,19 @@ $sql = "SELECT * FROM photo_records ORDER BY upload_time DESC";
 $result = mysqli_query($link, $sql);
 
 if (!$result) {
-    die("查詢失敗：" . mysqli_error($link));
+    error_log("查詢失敗：" . mysqli_error($link));
+    echo "<p>資料庫查詢失敗</p>";
+    $result = null;
 }
 
 // 顯示所有記錄
-while ($row = mysqli_fetch_assoc($result)) {
-    echo "<div class='record'>";
-    echo "<p>檔案名稱：" . htmlspecialchars($row['filename']) . "</p>";
-    echo "<p>上傳時間：" . htmlspecialchars($row['upload_time']) . "</p>";
-    echo "</div>";
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        echo "<div class='record'>";
+        echo "<p>檔案名稱：" . htmlspecialchars($row['filename']) . "</p>";
+        echo "<p>上傳時間：" . htmlspecialchars($row['upload_time']) . "</p>";
+        echo "</div>";
+    }
 }
 
 require_once("DB_close.php");   //引入資料庫關閉設定檔

@@ -33,7 +33,7 @@ if ($link instanceof mysqli) {
             WHERE u.id = ? AND a.username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$photoId, $username]);
-    $photo = $stmt->fetch(PDO::FETCH_ASSOC);
+    $photo = $stmt->fetch('ASSOC');
 
     if (!$photo) {
         echo "找不到照片或您沒有權限查看此照片。";

@@ -21,7 +21,7 @@ if (isset($_GET['all_albums']) && $_GET['all_albums'] == 1) {
         $sql = "SELECT id, name, cover_photo FROM albums WHERE username = ? ORDER BY created_at DESC";
         $stmt = $link->prepare($sql);
         $stmt->execute([$username]);
-        $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $albums = $stmt->fetchAll('ASSOC');
     } else {
         if ($link instanceof mysqli) {
             $sql = "SELECT id, name, cover_photo FROM albums WHERE username = ? ORDER BY created_at DESC";
@@ -35,7 +35,7 @@ if (isset($_GET['all_albums']) && $_GET['all_albums'] == 1) {
             $sql = "SELECT id, name, cover_photo FROM albums WHERE username = ? ORDER BY created_at DESC";
             $stmt = $link->prepare($sql);
             $stmt->execute([$username]);
-            $albums = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $albums = $stmt->fetchAll('ASSOC');
         }
     }
     echo json_encode([
@@ -58,7 +58,7 @@ if (isset($_GET['group_by_month']) && $_GET['group_by_month'] == 1) {
         $stmt = $link->prepare($sql);
         $stmt->execute([$username]);
         $albums_by_month = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch('ASSOC')) {
             $month = $row['month'] ?: '未知日期';
             unset($row['month']);
             $albums_by_month[$month][] = $row;
@@ -92,7 +92,7 @@ if (isset($_GET['group_by_month']) && $_GET['group_by_month'] == 1) {
             $stmt = $link->prepare($sql);
             $stmt->execute([$username]);
             $albums_by_month = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            while ($row = $stmt->fetch('ASSOC')) {
                 $month = $row['month'] ?: '未知日期';
                 unset($row['month']);
                 $albums_by_month[$month][] = $row;
@@ -119,7 +119,7 @@ if (isset($_GET['group_photos_by_month']) && $_GET['group_photos_by_month'] == 1
         $stmt->execute([$username]);
         $photos_by_month = [];
         $seen = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch('ASSOC')) {
             $month = date('Y年m月', strtotime($row['datetime']));
             $photo_key = md5($row['path']); // 以路徑為唯一標識去重複
             if (isset($seen[$photo_key])) continue;
@@ -158,7 +158,7 @@ if (isset($_GET['group_photos_by_month']) && $_GET['group_photos_by_month'] == 1
             $stmt->execute([$username]);
             $photos_by_month = [];
             $seen = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            while ($row = $stmt->fetch('ASSOC')) {
                 $month = date('Y年m月', strtotime($row['datetime']));
                 $photo_key = md5($row['path']); // 以路徑為唯一標識去重複
                 if (isset($seen[$photo_key])) continue;
@@ -189,7 +189,7 @@ if (isset($_GET['month'])) {
         $stmt->execute([$username, $month]);
         $photos = [];
         $seen = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $stmt->fetch('ASSOC')) {
             $photo_key = md5($row['path']);
             if (isset($seen[$photo_key])) continue;
             $seen[$photo_key] = true;
@@ -227,7 +227,7 @@ if (isset($_GET['month'])) {
             $stmt->execute([$username, $month]);
             $photos = [];
             $seen = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            while ($row = $stmt->fetch('ASSOC')) {
                 $photo_key = md5($row['path']);
                 if (isset($seen[$photo_key])) continue;
                 $seen[$photo_key] = true;
@@ -260,7 +260,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
             ORDER BY datetime DESC";
     $stmt = $link->prepare($sql);
     $stmt->execute([$albumId]);
-    $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $photos = $stmt->fetchAll('ASSOC');
 } else {
     if ($link instanceof mysqli) {
         $sql = "SELECT id FROM albums WHERE id = ? AND username = ?";
@@ -301,7 +301,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
                 ORDER BY datetime DESC";
         $stmt = $link->prepare($sql);
         $stmt->execute([$albumId]);
-        $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $photos = $stmt->fetchAll('ASSOC');
     }
 }
 

@@ -24,8 +24,8 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);
     
-    // 統一使用 prepared statement 的 fetch 方法
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            // 統一使用 prepared statement 的 fetch 方法
+        $row = $stmt->fetch('ASSOC');
     if ($row) {
         $name = $row['name'];
     }
@@ -61,7 +61,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC LIMIT 5";
     $diary_stmt = $link->prepare($diary_sql);
     $diary_stmt->execute([$username]);
-    while ($row = $diary_stmt->fetch(PDO::FETCH_ASSOC)) {
+    while ($row = $diary_stmt->fetch('ASSOC')) {
         $diaries[] = $row;
     }
 } else {

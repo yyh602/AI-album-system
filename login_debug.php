@@ -30,7 +30,7 @@ if(isset($_POST["Username"]) && isset($_POST["Password"])) {
             $sql = "SELECT * FROM \"user\" WHERE username = ?";
             $stmt = $link->prepare($sql);
             $stmt->execute([$username]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user = $stmt->fetch('ASSOC');
             
             echo "<h2>用戶查詢結果：</h2>";
             echo "<pre>";

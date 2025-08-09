@@ -73,11 +73,13 @@ try {
         require_once("DB_helper.php");
         
         // 測試資料庫連線
-        if ($link instanceof PgSQLWrapper) {
+        if ($link && $link instanceof PgSQLWrapper) {
             $test_result = $link->query("SELECT 1 as test");
             if (!$test_result) {
                 throw new Exception("資料庫查詢失敗");
             }
+        } elseif (!$link) {
+            throw new Exception("資料庫連線物件為 null");
         }
         
     } catch (Exception $db_error) {

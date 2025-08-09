@@ -29,7 +29,7 @@ try {
         
         echo "✅ PostgreSQL 資料庫連接成功！<br>";
         $stmt = $pdo->query("SELECT current_database() as db_name");
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch('ASSOC');
         echo "資料庫名稱: " . $row['db_name'];
     } else {
         // MySQL 連接

@@ -17,7 +17,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $diary_sql = "SELECT d.*, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.id = ? AND d.username = ?";
     $diary_stmt = $link->prepare($diary_sql);
     $diary_stmt->execute([$diary_id, $username]);
-    $diary = $diary_stmt->fetch(PDO::FETCH_ASSOC);
+    $diary = $diary_stmt->fetch('ASSOC');
 
     if (!$diary) {
         echo json_encode(['status' => 'error', 'message' => '找不到日誌']);
@@ -30,7 +30,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $photo_sql = "SELECT filename, path, datetime, latitude, longitude FROM photos WHERE album_id = ? ORDER BY datetime ASC";
         $photo_stmt = $link->prepare($photo_sql);
         $photo_stmt->execute([$diary['album_id']]);
-        while ($photo = $photo_stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($photo = $photo_stmt->fetch('ASSOC')) {
             $photos[] = $photo;
         }
     }
@@ -69,7 +69,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $diary_sql = "SELECT d.*, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.id = ? AND d.username = ?";
         $diary_stmt = $link->prepare($diary_sql);
         $diary_stmt->execute([$diary_id, $username]);
-        $diary = $diary_stmt->fetch(PDO::FETCH_ASSOC);
+        $diary = $diary_stmt->fetch('ASSOC');
 
         if (!$diary) {
             echo json_encode(['status' => 'error', 'message' => '找不到日誌']);
@@ -82,7 +82,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
             $photo_sql = "SELECT filename, path, datetime, latitude, longitude FROM photos WHERE album_id = ? ORDER BY datetime ASC";
             $photo_stmt = $link->prepare($photo_sql);
             $photo_stmt->execute([$diary['album_id']]);
-            while ($photo = $photo_stmt->fetch(PDO::FETCH_ASSOC)) {
+            while ($photo = $photo_stmt->fetch('ASSOC')) {
                 $photos[] = $photo;
             }
         }

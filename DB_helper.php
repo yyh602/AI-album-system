@@ -36,7 +36,7 @@ function db_get_result($stmt) {
 
 function db_fetch_assoc($result) {
     if ($result instanceof PDOStatement) {
-        return $result->fetch(PDO::FETCH_ASSOC);
+        return $result->fetch('ASSOC');
     } else {
         return mysqli_fetch_assoc($result);
     }
@@ -44,7 +44,7 @@ function db_fetch_assoc($result) {
 
 function db_fetch_all($result, $mode = null) {
     if ($result instanceof PDOStatement) {
-        return $result->fetchAll(PDO::FETCH_ASSOC);
+        return $result->fetchAll('ASSOC');
     } else {
         return mysqli_fetch_all($result, $mode ?? MYSQLI_ASSOC);
     }

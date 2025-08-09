@@ -5,12 +5,12 @@ require_once("DB_helper.php");
 
 // 檢查是否有登入
 if (!isset($_SESSION["username"])) {
-    die(json_encode(["status" => "error", "message" => "請先登入"]));
+    echo json_encode(["status" => "error", "message" => "請先登入"]); exit();
 }
 
 // 檢查是否有提供照片 ID
 if (!isset($_POST["photo_id"])) {
-    die(json_encode(["status" => "error", "message" => "未提供照片 ID"]));
+    echo json_encode(["status" => "error", "message" => "未提供照片 ID"]); exit();
 }
 
 $photo_id = $_POST["photo_id"];
@@ -21,7 +21,7 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $sql = "SELECT filename FROM uploads WHERE id = ? AND username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$photo_id, $username]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $row = $stmt->fetch('ASSOC');
     
     if ($row) {
         $filename = $row['filename'];
