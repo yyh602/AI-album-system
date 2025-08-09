@@ -5,6 +5,12 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
 try {
+    // 設定 PHP 上傳限制
+    ini_set('upload_max_filesize', '50M');
+    ini_set('post_max_size', '50M');
+    ini_set('max_execution_time', '3600');
+    ini_set('memory_limit', '256M');
+    
     // 檢查 session 狀態，避免重複啟動
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
@@ -36,6 +42,27 @@ try {
         echo json_encode([
             'status' => 'error',
             'message' => '請選擇要上傳的檔案'
+        ]);
+        exit();
+    }
+    
+    // 檢查總檔案大小
+    $totalSize = 0;
+    $maxFileSize = 50 * 1024 * 1024; // 50MB
+    $maxTotalSize = 100 * 1024 * 1024; // 100MB
+    
+    foreach ($_FILES as $file) {
+        if (is_array($file['size'])) {
+            $totalSize += array_sum($file['size']);
+        } else {
+            $totalSize += $file['size'];
+        }
+    }
+    
+    if ($totalSize > $maxTotalSize) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => '檔案總大小超過限制 (100MB)，目前大小：' . round($totalSize / 1024 / 1024, 2) . 'MB'
         ]);
         exit();
     }

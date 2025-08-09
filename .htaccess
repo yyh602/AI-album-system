@@ -1,0 +1,28 @@
+# PHP 檔案上傳設定
+php_value upload_max_filesize 50M
+php_value post_max_size 50M
+php_value max_execution_time 3600
+php_value max_input_time 3600
+php_value memory_limit 256M
+
+# Apache 檔案上傳限制
+LimitRequestBody 52428800
+
+# 錯誤處理
+php_flag display_errors Off
+php_flag log_errors On
+
+# 檔案類型支援
+AddType image/svg+xml .svg
+AddType application/font-woff .woff
+AddType application/font-woff2 .woff2
+
+# URL 重寫
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# 安全性設定
+Options -Indexes
+DirectoryIndex index.php login.php open.php
