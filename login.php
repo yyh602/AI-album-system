@@ -19,76 +19,40 @@ if($username != "" && $password != ""){
         set_time_limit(10);
         require_once("DB_open.php");    //引入資料庫連結設定檔
         
-        // 檢查連接類型並使用相應的查詢方式
-        if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
-            // PostgreSQL 查詢
-            $sql = "SELECT * FROM \"user\" WHERE password = ? AND username = ?";
-            $stmt = $link->prepare($sql);
-            $stmt->execute([$password, $username]);
+        // 統一使用 MySQL 語法 (因為現在環境變數設定為 mysql)
+        if ($link instanceof mysqli && $link !== null) {
+            // MySQL 查詢 - 使用 prepared statement 避免 SQL 注入
+            $sql = "SELECT * FROM user WHERE password = ? AND username = ?";
+            $stmt = mysqli_prepare($link, $sql);
             
-            // 簡化邏輯：直接嘗試獲取第一筆記錄來判斷是否登入成功
-            if ($link instanceof PgSQLWrapper) {
-                // 嘗試獲取第一筆記錄
-                $user_row = $stmt->fetch('ASSOC');
-                $total_records = $user_row ? 1 : 0;
-            } else {
-                $total_records = $stmt->rowCount();
-            }
-            
-            if($total_records > 0){
-                // 成功登入, 指定Session變數
-                $_SESSION["login_session"] = true;
-                $_SESSION["username"] = $username;
-                // 使用絕對 URL 避免跳轉問題
-                $welcome_url = "https://" . $_SERVER['HTTP_HOST'] . "/welcome.php";
-                header("Location: " . $welcome_url);
-                exit();
-            } else {    // 登入失敗
-                $login_error = true;
-                $_SESSION["login_session"] = false;
-            }
-        } else {
-            // MySQL 查詢
-            if ($link instanceof mysqli) {
-                $sql = "SELECT * FROM \"user\" WHERE password='";
-                $sql.= $password."' AND username='".$username."'";
-                $result = mysqli_query($link, $sql);
-                if ($result) {
-                    $total_records = mysqli_num_rows($result);
-                    if($total_records > 0){
-                        $_SESSION["login_session"] = true;
-                        $_SESSION["username"] = $username;
-                        // 使用絕對 URL 避免跳轉問題
-                        $welcome_url = "https://" . $_SERVER['HTTP_HOST'] . "/welcome.php";
-                        header("Location: " . $welcome_url);
-                        exit();
-                    } else {
-                        $login_error = true;
-                        $_SESSION["login_session"] = false;
-                    }
-                } else {
-                    $login_error = true;
-                    error_log("SQL 查詢失敗: " . mysqli_error($link));
-                }
-            } else {
-                // 如果是 PDOWrapper，使用 PDO 方式查詢
-                $sql = "SELECT * FROM \"user\" WHERE password = ? AND username = ?";
-                $stmt = $link->prepare($sql);
-                $stmt->execute([$password, $username]);
-                $total_records = $stmt->rowCount();
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, "ss", $password, $username);
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
                 
-                if($total_records > 0){
+                if ($result && mysqli_num_rows($result) > 0) {
+                    // 成功登入
                     $_SESSION["login_session"] = true;
                     $_SESSION["username"] = $username;
-                    // 使用絕對 URL 避免跳轉問題
+                    
+                    // 使用絕對 URL 跳轉
                     $welcome_url = "https://" . $_SERVER['HTTP_HOST'] . "/welcome.php";
                     header("Location: " . $welcome_url);
                     exit();
                 } else {
+                    // 登入失敗
                     $login_error = true;
                     $_SESSION["login_session"] = false;
                 }
+                mysqli_stmt_close($stmt);
+            } else {
+                $login_error = true;
+                error_log("SQL prepare 失敗: " . mysqli_error($link));
             }
+        } else {
+            // 資料庫連線失敗
+            $login_error = true;
+            error_log("資料庫連線失敗: link 物件為空或非 mysqli 實例");
         }
         require_once("DB_close.php");   //引入資料庫關閉設定檔
     } catch (Exception $e) {

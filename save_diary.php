@@ -14,7 +14,7 @@ if (!$username || !$album_id || !$content) {
     exit;
 }
 
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+if (false) { // 停用 PostgreSQL 邏輯
     $stmt = $link->prepare("INSERT INTO travel_diary (username, album_id, album_name, content, created_at) VALUES (?, ?, ?, ?, NOW())");
     if ($stmt->execute([$username, $album_id, $album_name, $content])) {
         echo json_encode(['status' => 'success']);

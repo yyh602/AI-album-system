@@ -12,7 +12,7 @@ $username = $_SESSION["username"];
 $name = $username;
 
 if ($link instanceof mysqli) {
-    $sql = "SELECT name FROM \"user\" WHERE username = ?";
+    $sql = "SELECT name FROM user WHERE username = ?";
     $stmt = mysqli_prepare($link, $sql);
     mysqli_stmt_bind_param($stmt, "s", $username);
     mysqli_stmt_execute($stmt);
@@ -24,15 +24,8 @@ if ($link instanceof mysqli) {
 
     mysqli_stmt_close($stmt);
 } else {
-    // 如果是 PDOWrapper，使用 PDO 方式查詢
-    $sql = "SELECT name FROM \"user\" WHERE username = ?";
-    $stmt = $link->prepare($sql);
-    $stmt->execute([$username]);
-    $result = $stmt->fetch();
-    
-    if ($result) {
-        $name = $result['name'];
-    }
+    // 資料庫連線失敗處理
+    error_log("資料庫連線失敗或類型不正確");
 }
 require_once("DB_close.php");
 ?>

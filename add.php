@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $passVal = isset($_POST["password"]) ? $_POST["password"] : "";
 
     if ($link instanceof mysqli) {
-        $stmt = mysqli_prepare($link, "SELECT COUNT(*) FROM \"user\" WHERE username = ?");
+        $stmt = mysqli_prepare($link, "SELECT COUNT(*) FROM user WHERE username = ?");
         mysqli_stmt_bind_param($stmt, "s", $userVal);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_bind_result($stmt, $userCount);
@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $userVal = "";
     } else {
         if ($link instanceof mysqli) {
-            $stmt = mysqli_prepare($link, "INSERT INTO \"user\" (name, username, password) VALUES (?, ?, ?)");
+            $stmt = mysqli_prepare($link, "INSERT INTO user (name, username, password) VALUES (?, ?, ?)");
             mysqli_stmt_bind_param($stmt, "sss", $nameVal, $userVal, $passVal);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);

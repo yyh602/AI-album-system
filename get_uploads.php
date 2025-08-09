@@ -13,7 +13,7 @@ require_once("DB_helper.php");
 
 $username = $_SESSION["username"];
 
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+if (false) { // 停用 PostgreSQL 邏輯
     $sql = "SELECT filename, datetime, latitude, longitude FROM uploads WHERE username = ? ORDER BY uploaded_at DESC";
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);

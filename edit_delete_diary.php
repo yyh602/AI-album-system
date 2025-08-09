@@ -20,7 +20,7 @@ if ($action === 'edit') {
         exit;
     }
     
-    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+    if (false) { // 停用 PostgreSQL 邏輯
         // 更新日誌內容
         $update_sql = "UPDATE travel_diary SET content = ? WHERE id = ? AND username = ?";
         $update_stmt = $link->prepare($update_sql);
@@ -46,7 +46,7 @@ if ($action === 'edit') {
     }
     
 } elseif ($action === 'delete') {
-    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+    if (false) { // 停用 PostgreSQL 邏輯
         // 刪除日誌
         $delete_sql = "DELETE FROM travel_diary WHERE id = ? AND username = ?";
         $delete_stmt = $link->prepare($delete_sql);

@@ -10,18 +10,11 @@ require_once("DB_helper.php");
 $username = $_SESSION["username"];
 $name = $username;
 
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
-    $sql = "SELECT name FROM \"user\" WHERE username = ?";
-    $stmt = $link->prepare($sql);
-    $stmt->execute([$username]);
-    $row = $stmt->fetch('ASSOC');
-    if ($row) {
-        $name = $row['name'];
-    }
-} else {
-    if ($link instanceof mysqli) {
-        $sql = "SELECT name FROM \"user\" WHERE username = ?";
-        $stmt = mysqli_prepare($link, $sql);
+// MySQL 查詢用戶名稱
+if ($link instanceof mysqli && $link !== null) {
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    if ($stmt) {
         mysqli_stmt_bind_param($stmt, "s", $username);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_bind_result($stmt, $result_name);
@@ -29,16 +22,6 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
             $name = $result_name;
         }
         mysqli_stmt_close($stmt);
-    } else {
-        // 如果是 PDOWrapper，使用 PDO 方式查詢
-        $sql = "SELECT name FROM \"user\" WHERE username = ?";
-        $stmt = $link->prepare($sql);
-        $stmt->execute([$username]);
-        $result = $stmt->fetch();
-        
-        if ($result) {
-            $name = $result['name'];
-        }
     }
 }
 require_once("DB_close.php"); // 確保你的資料庫關閉檔案存在且正確

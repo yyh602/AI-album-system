@@ -78,7 +78,7 @@ try {
         }
         
         // 測試資料庫連線
-        if ($link instanceof PgSQLWrapper) {
+        if (false) { // 停用 PostgreSQL 邏輯
             $test_result = $link->query("SELECT 1 as test");
             if (!$test_result) {
                 throw new Exception("資料庫查詢失敗");

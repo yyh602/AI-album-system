@@ -17,23 +17,11 @@ require_once("DB_helper.php");
 $username = $_SESSION["username"];
 $name = $username;
 
-// 使用統一的資料庫操作函數
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
-    // PostgreSQL 查詢
-    $sql = "SELECT name FROM \"user\" WHERE username = ?";
-    $stmt = $link->prepare($sql);
-    $stmt->execute([$username]);
-    
-            // 統一使用 prepared statement 的 fetch 方法
-        $row = $stmt->fetch('ASSOC');
-    if ($row) {
-        $name = $row['name'];
-    }
-} else {
-    // MySQL 查詢
-    if ($link instanceof mysqli) {
-        $sql = "SELECT name FROM \"user\" WHERE username = ?";
-        $stmt = mysqli_prepare($link, $sql);
+// MySQL 查詢用戶名稱
+if ($link instanceof mysqli && $link !== null) {
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    if ($stmt) {
         mysqli_stmt_bind_param($stmt, "s", $username);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_bind_result($stmt, $result_name);
@@ -42,47 +30,24 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
             $name = $result_name;
         }
         mysqli_stmt_close($stmt);
-    } else {
-        // 如果是 PDOWrapper，使用 PDO 方式查詢
-        $sql = "SELECT name FROM \"user\" WHERE username = ?";
-        $stmt = $link->prepare($sql);
-        $stmt->execute([$username]);
-        $result = $stmt->fetch();
-        
-        if ($result) {
-            $name = $result['name'];
-        }
     }
 }
 
 // 查詢歷史日誌
 $diaries = [];
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+if ($link instanceof mysqli && $link !== null) {
     $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC LIMIT 5";
-    $diary_stmt = $link->prepare($diary_sql);
-    $diary_stmt->execute([$username]);
-    while ($row = $diary_stmt->fetch('ASSOC')) {
-        $diaries[] = $row;
-    }
-} else {
-    if ($link instanceof mysqli) {
-        $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC LIMIT 5";
-        $diary_stmt = mysqli_prepare($link, $diary_sql);
+    $diary_stmt = mysqli_prepare($link, $diary_sql);
+    if ($diary_stmt) {
         mysqli_stmt_bind_param($diary_stmt, "s", $username);
         mysqli_stmt_execute($diary_stmt);
         $diary_result = mysqli_stmt_get_result($diary_stmt);
-        while ($row = mysqli_fetch_assoc($diary_result)) {
-            $diaries[] = $row;
+        if ($diary_result) {
+            while ($row = mysqli_fetch_assoc($diary_result)) {
+                $diaries[] = $row;
+            }
         }
         mysqli_stmt_close($diary_stmt);
-    } else {
-        // 如果是 PDOWrapper，使用 PDO 方式查詢
-        $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC LIMIT 5";
-        $diary_stmt = $link->prepare($diary_sql);
-        $diary_stmt->execute([$username]);
-        while ($row = $diary_stmt->fetch(PDO::FETCH_ASSOC)) {
-            $diaries[] = $row;
-        }
     }
 }
 

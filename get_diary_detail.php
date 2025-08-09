@@ -12,7 +12,7 @@ if (!$username || !$diary_id) {
     exit;
 }
 
-if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+if (false) { // 停用 PostgreSQL 邏輯
     // 獲取日誌詳情
     $diary_sql = "SELECT d.*, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.id = ? AND d.username = ?";
     $diary_stmt = $link->prepare($diary_sql);
