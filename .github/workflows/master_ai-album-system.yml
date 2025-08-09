@@ -4,10 +4,7 @@
 name: Build and deploy PHP app to Azure Web App - AI-album-system
 
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
+  workflow_dispatch:  # 只保留手動觸發，用於正式發布
 
 jobs:
   build:
@@ -56,9 +53,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1691A7A495D34E4C96596C02A9CBB9C5 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5A4FBF93DE6C4EBBAF879AF68728DD29 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EDB00E0050CB489FBC9089DE5110E1F9 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E3821A3DA08E4B608263701E470E6EBB }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_132143F8F39B48518CCEE063E669E5E6 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_291078B732F54DEABACEB7A3CD17C73A }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
