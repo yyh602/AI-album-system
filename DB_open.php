@@ -106,10 +106,12 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
             class PgSQLPreparedWrapper {
                 private $pg_connection;
                 private $sql;
+                private $result;
                 
                 public function __construct($pg_connection, $sql) {
                     $this->pg_connection = $pg_connection;
                     $this->sql = $sql;
+                    $this->result = null;
                 }
                 
                 public function execute($params = []) {
@@ -118,7 +120,33 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
                     foreach ($params as $param) {
                         $sql = preg_replace('/\?/', "'" . pg_escape_string($this->pg_connection, $param) . "'", $sql, 1);
                     }
-                    return pg_query($this->pg_connection, $sql);
+                    $this->result = pg_query($this->pg_connection, $sql);
+                    return $this->result;
+                }
+                
+                public function fetch($mode = PDO::FETCH_ASSOC) {
+                    if (!$this->result) return false;
+                    
+                    if ($mode == PDO::FETCH_ASSOC) {
+                        return pg_fetch_assoc($this->result);
+                    } else {
+                        return pg_fetch_array($this->result);
+                    }
+                }
+                
+                public function fetchAll($mode = PDO::FETCH_ASSOC) {
+                    if (!$this->result) return [];
+                    
+                    $rows = [];
+                    while ($row = $this->fetch($mode)) {
+                        $rows[] = $row;
+                    }
+                    return $rows;
+                }
+                
+                public function rowCount() {
+                    if (!$this->result) return 0;
+                    return pg_num_rows($this->result);
                 }
             }
         }

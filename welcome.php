@@ -24,18 +24,10 @@ if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);
     
-    if ($link instanceof PgSQLWrapper) {
-        // 對於 PgSQLWrapper，使用不同的 fetch 方法
-        $result = $link->query("SELECT name FROM \"user\" WHERE username = '" . pg_escape_string($username) . "'");
-        $row = $result->fetch_assoc();
-        if ($row) {
-            $name = $row['name'];
-        }
-    } else {
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row) {
-            $name = $row['name'];
-        }
+    // 統一使用 prepared statement 的 fetch 方法
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $name = $row['name'];
     }
 } else {
     // MySQL 查詢
