@@ -1,12 +1,12 @@
 # PHP 檔案上傳設定
-php_value upload_max_filesize 50M
-php_value post_max_size 50M
-php_value max_execution_time 3600
-php_value max_input_time 3600
-php_value memory_limit 256M
+php_value upload_max_filesize 100M
+php_value post_max_size 100M
+php_value max_execution_time 7200
+php_value max_input_time 7200
+php_value memory_limit 512M
 
 # Apache 檔案上傳限制
-LimitRequestBody 52428800
+LimitRequestBody 104857600
 
 # 錯誤處理
 php_flag display_errors Off

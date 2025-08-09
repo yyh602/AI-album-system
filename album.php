@@ -403,9 +403,31 @@ require_once("DB_close.php");
             // 預覽照片
             document.getElementById('albumPhotoInput').addEventListener('change', function(e) {
                 const files = Array.from(e.target.files);
-                files.forEach(file => {
+                
+                // 檢查檔案大小和數量限制
+                const maxFileSize = 10 * 1024 * 1024; // 10MB per file
+                const maxTotalSize = 80 * 1024 * 1024; // 80MB total
+                let totalSize = 0;
+                let validFiles = [];
+                
+                for (let file of files) {
+                    if (file.size > maxFileSize) {
+                        alert(`檔案 "${file.name}" 過大，單個檔案不能超過 10MB`);
+                        continue;
+                    }
+                    totalSize += file.size;
+                    if (totalSize > maxTotalSize) {
+                        alert('總檔案大小超過 80MB 限制，請減少檔案數量或壓縮檔案');
+                        break;
+                    }
+                    validFiles.push(file);
+                }
+                
+                // 加入有效檔案
+                validFiles.forEach(file => {
                     selectedAlbumPhotos.push(file);
                 });
+                
                 renderAlbumPhotoGrid();
                 if (selectedAlbumPhotos.length > 0) {
                     document.getElementById('nameStep').style.display = '';

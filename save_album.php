@@ -4,12 +4,14 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-try {
-    // 設定 PHP 上傳限制
-    ini_set('upload_max_filesize', '50M');
-    ini_set('post_max_size', '50M');
-    ini_set('max_execution_time', '3600');
-    ini_set('memory_limit', '256M');
+    try {
+        // 設定 PHP 上傳限制（增強版本）
+        ini_set('upload_max_filesize', '100M');
+        ini_set('post_max_size', '100M');
+        ini_set('max_execution_time', '7200');
+        ini_set('max_input_time', '7200');
+        ini_set('memory_limit', '512M');
+        ini_set('max_file_uploads', '50');
     
     // 檢查 session 狀態，避免重複啟動
     if (session_status() == PHP_SESSION_NONE) {
