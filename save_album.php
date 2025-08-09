@@ -72,17 +72,25 @@ try {
         require_once("DB_open.php");
         require_once("DB_helper.php");
         
+        // 檢查 $link 變數是否正確載入
+        if (!isset($link) || $link === null) {
+            throw new Exception("資料庫連線物件未定義或為 null");
+        }
+        
         // 測試資料庫連線
-        if ($link && $link instanceof PgSQLWrapper) {
+        if ($link instanceof PgSQLWrapper) {
             $test_result = $link->query("SELECT 1 as test");
             if (!$test_result) {
                 throw new Exception("資料庫查詢失敗");
             }
-        } elseif (!$link) {
-            throw new Exception("資料庫連線物件為 null");
         }
         
     } catch (Exception $db_error) {
+        // 記錄詳細錯誤信息
+        error_log("save_album.php 資料庫錯誤: " . $db_error->getMessage());
+        error_log("save_album.php 錯誤檔案: " . $db_error->getFile());
+        error_log("save_album.php 錯誤行號: " . $db_error->getLine());
+        
         // 資料庫錯誤時，仍然回傳成功（測試模式）
         echo json_encode([
             'status' => 'success',
@@ -93,6 +101,8 @@ try {
                 'file_count' => count($_FILES),
                 'files' => array_keys($_FILES),
                 'db_error' => $db_error->getMessage(),
+                'error_file' => $db_error->getFile(),
+                'error_line' => $db_error->getLine(),
                 'mode' => 'fallback'
             ]
         ]);
@@ -137,12 +147,27 @@ try {
     ]);
     
 } catch (Exception $e) {
-    http_response_code(500);
+    // 記錄詳細錯誤到日誌
+    error_log("save_album.php 致命錯誤: " . $e->getMessage());
+    error_log("save_album.php 致命錯誤檔案: " . $e->getFile());
+    error_log("save_album.php 致命錯誤行號: " . $e->getLine());
+    error_log("save_album.php 致命錯誤追蹤: " . $e->getTraceAsString());
+    
+    // 避免 502 錯誤，不設定 HTTP 500 狀態碼
     echo json_encode([
         'status' => 'error',
         'message' => '伺服器錯誤: ' . $e->getMessage(),
         'file' => $e->getFile(),
-        'line' => $e->getLine()
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
+    ]);
+} catch (Throwable $t) {
+    // 捕獲所有可能的錯誤，包括 Fatal Error
+    error_log("save_album.php 嚴重錯誤: " . $t->getMessage());
+    echo json_encode([
+        'status' => 'error',
+        'message' => '嚴重錯誤: ' . $t->getMessage(),
+        'type' => get_class($t)
     ]);
 }
 ?>
