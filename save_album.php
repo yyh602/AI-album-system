@@ -18,7 +18,7 @@ function convertGPS($coordinate) {
     return null;
 }
 
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $link->exec("SET NAMES utf8mb4");
 } elseif ($link instanceof mysqli) {
     mysqli_set_charset($link, "utf8mb4");
@@ -199,7 +199,7 @@ if (count($uploadedPhotoIds) === 0) {
     exit();
 }
 
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     // 建立相簿
     $stmt = $link->prepare("INSERT INTO albums (name, cover_photo, username, created_at) VALUES (?, ?, ?, NOW())");
     $stmt->execute([$albumName, $coverPhoto, $username]);

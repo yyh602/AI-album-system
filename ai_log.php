@@ -10,7 +10,7 @@ require_once("DB_helper.php");
 $username = $_SESSION["username"];
 $name = $username;
 
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $sql = "SELECT name FROM \"user\" WHERE username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);
@@ -106,7 +106,7 @@ require("DB_open.php");
 require_once("DB_helper.php");
 
 $diaries = [];
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
     $diary_stmt = $link->prepare($diary_sql);
     $diary_stmt->execute([$username]);

@@ -14,7 +14,7 @@ $username = $_SESSION["username"];
 
 // 新增：支援 all_albums=1，回傳所有相簿
 if (isset($_GET['all_albums']) && $_GET['all_albums'] == 1) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $sql = "SELECT id, name, cover_photo FROM albums WHERE username = ? ORDER BY created_at DESC";
         $stmt = $link->prepare($sql);
         $stmt->execute([$username]);
@@ -45,7 +45,7 @@ if (isset($_GET['all_albums']) && $_GET['all_albums'] == 1) {
 
 // 新增：支援 group_by_month=1，依照片最早拍攝日期分組回傳相簿
 if (isset($_GET['group_by_month']) && $_GET['group_by_month'] == 1) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $sql = "SELECT a.id, a.name, a.cover_photo, TO_CHAR(MIN(p.datetime), 'YYYY年MM月') as month
                 FROM albums a
                 LEFT JOIN photos p ON a.id = p.album_id
@@ -106,7 +106,7 @@ if (isset($_GET['group_by_month']) && $_GET['group_by_month'] == 1) {
 
 // 新增：支援 group_photos_by_month=1，依照片拍攝月份分組且去重複
 if (isset($_GET['group_photos_by_month']) && $_GET['group_photos_by_month'] == 1) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $sql = "SELECT filename, path, datetime
                 FROM photos
                 WHERE datetime IS NOT NULL AND datetime != ''
@@ -175,7 +175,7 @@ if (isset($_GET['group_photos_by_month']) && $_GET['group_photos_by_month'] == 1
 // 新增：支援 month=YYYY-MM，回傳該月份所有不重複照片
 if (isset($_GET['month'])) {
     $month = $_GET['month']; // 格式: YYYY-MM
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         $sql = "SELECT filename, path, datetime
                 FROM photos
                 WHERE datetime IS NOT NULL AND datetime != ''
@@ -241,7 +241,7 @@ if (isset($_GET['month'])) {
 }
 
 // 驗證相簿所有權
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $sql = "SELECT id FROM albums WHERE id = ? AND username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$albumId, $username]);

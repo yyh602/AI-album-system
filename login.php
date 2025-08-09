@@ -17,12 +17,22 @@ if($username != "" && $password != ""){
         require_once("DB_open.php");    //引入資料庫連結設定檔
         
         // 檢查連接類型並使用相應的查詢方式
-        if ($link instanceof PDO) {
+        if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
             // PostgreSQL 查詢
             $sql = "SELECT * FROM \"user\" WHERE password = ? AND username = ?";
             $stmt = $link->prepare($sql);
             $stmt->execute([$password, $username]);
-            $total_records = $stmt->rowCount();
+            
+            // 為了兼容性，使用不同的方法計算記錄數
+            if ($link instanceof PgSQLWrapper) {
+                // 對於 PgSQLWrapper，需要重新查詢計算記錄數
+                $count_sql = "SELECT COUNT(*) FROM \"user\" WHERE password = '" . pg_escape_string($password) . "' AND username = '" . pg_escape_string($username) . "'";
+                $count_result = $link->query($count_sql);
+                $count_row = $count_result->fetch_row();
+                $total_records = $count_row[0];
+            } else {
+                $total_records = $stmt->rowCount();
+            }
             
             if($total_records > 0){
                 // 成功登入, 指定Session變數

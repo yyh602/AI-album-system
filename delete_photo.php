@@ -16,7 +16,7 @@ if (!isset($_POST["photo_id"])) {
 $photo_id = $_POST["photo_id"];
 $username = $_SESSION["username"];
 
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     // 先取得檔案名稱
     $sql = "SELECT filename FROM uploads WHERE id = ? AND username = ?";
     $stmt = $link->prepare($sql);

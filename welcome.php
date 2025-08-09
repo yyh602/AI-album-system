@@ -13,14 +13,24 @@ $username = $_SESSION["username"];
 $name = $username;
 
 // 使用統一的資料庫操作函數
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     // PostgreSQL 查詢
     $sql = "SELECT name FROM \"user\" WHERE username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($row) {
-        $name = $row['name'];
+    
+    if ($link instanceof PgSQLWrapper) {
+        // 對於 PgSQLWrapper，使用不同的 fetch 方法
+        $result = $link->query("SELECT name FROM \"user\" WHERE username = '" . pg_escape_string($username) . "'");
+        $row = $result->fetch_assoc();
+        if ($row) {
+            $name = $row['name'];
+        }
+    } else {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $name = $row['name'];
+        }
     }
 } else {
     // MySQL 查詢
@@ -50,7 +60,7 @@ if ($link instanceof PDO) {
 
 // 查詢歷史日誌
 $diaries = [];
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC LIMIT 5";
     $diary_stmt = $link->prepare($diary_sql);
     $diary_stmt->execute([$username]);

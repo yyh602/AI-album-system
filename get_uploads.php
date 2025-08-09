@@ -13,7 +13,7 @@ require_once("DB_helper.php");
 
 $username = $_SESSION["username"];
 
-if ($link instanceof PDO) {
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
     $sql = "SELECT filename, datetime, latitude, longitude FROM uploads WHERE username = ? ORDER BY uploaded_at DESC";
     $stmt = $link->prepare($sql);
     $stmt->execute([$username]);

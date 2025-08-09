@@ -2,7 +2,7 @@
 // 資料庫操作輔助函數
 
 function db_prepare($link, $sql) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         return $link->prepare($sql);
     } else {
         return mysqli_prepare($link, $sql);
@@ -84,7 +84,7 @@ function db_stmt_close($stmt) {
 }
 
 function db_begin_transaction($link) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         return $link->beginTransaction();
     } else {
         return mysqli_begin_transaction($link);
@@ -92,7 +92,7 @@ function db_begin_transaction($link) {
 }
 
 function db_commit($link) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         return $link->commit();
     } else {
         return mysqli_commit($link);
@@ -100,7 +100,7 @@ function db_commit($link) {
 }
 
 function db_rollback($link) {
-    if ($link instanceof PDO) {
+    if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
         return $link->rollback();
     } else {
         return mysqli_rollback($link);
