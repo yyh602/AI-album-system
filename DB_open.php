@@ -1,12 +1,12 @@
 <?php
 
 // 從環境變數獲取資料庫配置
-$host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-$dbname = $_ENV['DB_NAME'] ?? 'myproject';
-$db_user = $_ENV['DB_USER'] ?? 'root';
-$db_pass = $_ENV['DB_PASS'] ?? 'MariaDB1688.';
+$host = $_ENV['DB_HOST'] ?? 'album.mysql.database.azure.com';
+$dbname = $_ENV['DB_NAME'] ?? 'album'; // 預設資料庫名稱
+$db_user = $_ENV['DB_USER'] ?? 's1411131020';
+$db_pass = $_ENV['DB_PASS'] ?? '{your-password}'; // 需要設定你的密碼
 $db_port = $_ENV['DB_PORT'] ?? '3306';
-$db_type = $_ENV['DB_TYPE'] ?? 'postgresql'; // 強制使用 PostgreSQL
+$db_type = $_ENV['DB_TYPE'] ?? 'mysql';
 
 // 根據資料庫類型選擇連接方式
 if ($db_type === 'postgresql' || $db_type === 'pgsql') {
@@ -162,31 +162,46 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
         $link = null; // 設為 null 而不是 die()
     }
 } else {
-    // MySQL/MariaDB 連接（保持原有邏輯）
-    $link = new mysqli($host, $db_user, $db_pass, $dbname, $db_port);
+    // MySQL/MariaDB 連接（支援 Azure MySQL SSL）
+    $link = new mysqli();
+    
+    // 如果是 Azure MySQL，設定 SSL
+    if (strpos($host, '.mysql.database.azure.com') !== false) {
+        $link->ssl_set(null, null, null, null, null);
+        $link->options(MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+    }
+    
+    // 連接到資料庫
+    $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
     
     // 檢查連線是否成功
     if ($link->connect_error) {
         error_log("❌ MySQL 資料庫連線失敗：" . $link->connect_error);
+        error_log("❌ 連線錯誤碼：" . $link->connect_errno);
         // 不要 die()，讓應用程式繼續運行
         $link = null;
+    } else {
+        // 只有在連線成功時才設定字符集
+        $link->set_charset("utf8");
+        error_log("✅ MySQL 資料庫連線成功");
     }
-    
-    // 設定字符集
-    $link->set_charset("utf8");
 }
 
-// 紀錄目前使用的資料庫
-if ($db_type === 'postgresql' || $db_type === 'pgsql') {
-    $currentDb = $link->query("SELECT current_database()");
-    if ($currentDb) {
-        $row = $currentDb->fetch();
-        error_log('【目前連線資料庫】：' . $row[0]);
+// 紀錄目前使用的資料庫（只有在連線成功時）
+if ($link !== null) {
+    if ($db_type === 'postgresql' || $db_type === 'pgsql') {
+        $currentDb = $link->query("SELECT current_database()");
+        if ($currentDb) {
+            $row = $currentDb->fetch();
+            error_log('【目前連線資料庫】：' . $row[0]);
+        }
+    } else {
+        $currentDb = $link->query("SELECT DATABASE()");
+        if ($currentDb) {
+            $row = $currentDb->fetch_row();
+            error_log('【目前連線資料庫】：' . $row[0]);
+        }
     }
 } else {
-    $currentDb = $link->query("SELECT DATABASE()");
-    if ($currentDb) {
-        $row = $currentDb->fetch_row();
-        error_log('【目前連線資料庫】：' . $row[0]);
-    }
+    error_log('【資料庫連線】：連線失敗，$link 為 null');
 }
