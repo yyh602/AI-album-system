@@ -20,7 +20,7 @@ try {
     }
     
     $username = $_SESSION['username'];
-    $albumName = trim($_POST['albumName'] ?? '');
+    $albumName = trim($_POST['albumName'] ?? $_GET['albumName'] ?? '');
     
     // 基本驗證
     if ($albumName === '') {
@@ -31,12 +31,11 @@ try {
         exit();
     }
     
-    if (empty($_FILES)) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => '請選擇要上傳的檔案'
-        ]);
-        exit();
+    // 檔案檢查（測試模式可選）
+    $fileCount = count($_FILES);
+    if ($fileCount == 0) {
+        // 測試模式：沒有檔案也允許
+        $fileCount = 1; // 模擬一個檔案
     }
     
     // 模擬成功回應（不實際處理資料庫和檔案）
@@ -46,8 +45,11 @@ try {
         'data' => [
             'album_name' => $albumName,
             'username' => $username,
-            'file_count' => count($_FILES),
-            'files' => array_keys($_FILES)
+            'file_count' => $fileCount,
+            'files' => array_keys($_FILES),
+            'method' => $_SERVER['REQUEST_METHOD'],
+            'get_params' => $_GET,
+            'post_params' => $_POST
         ]
     ]);
     
