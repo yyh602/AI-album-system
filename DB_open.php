@@ -165,34 +165,45 @@ if (false) { // 停用 PostgreSQL 邏輯
     // MySQL/MariaDB 連接（支援 Azure MySQL SSL）
     $link = new mysqli();
     
-    // 嘗試標準連線（Azure MySQL 應該會自動處理 SSL）
-    $success = $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
-    
-    // 如果標準連線失敗且是 Azure MySQL，嘗試強制 SSL
-    if (!$success && strpos($host, '.mysql.database.azure.com') !== false) {
-        error_log("標準連線失敗，嘗試 SSL 連線...");
-        $link = new mysqli(); // 重新建立連線物件
+    // Azure MySQL 強制要求 SSL 連線
+    if (strpos($host, '.mysql.database.azure.com') !== false) {
+        // Azure MySQL 必須使用 SSL
+        error_log("檢測到 Azure MySQL，強制使用 SSL 連線");
         
-        // 嘗試基本 SSL 設定
         try {
+            // 設定 SSL（Azure MySQL 要求）
             $link->ssl_set(null, null, null, null, null);
-            $ssl_flag = defined('MYSQLI_CLIENT_SSL') ? MYSQLI_CLIENT_SSL : 2048; // 手動設定 SSL flag
+            
+            // 使用 SSL 連線到 Azure MySQL
+            $ssl_flag = defined('MYSQLI_CLIENT_SSL') ? MYSQLI_CLIENT_SSL : 2048;
             $success = $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port, null, $ssl_flag);
+            
+            if ($success) {
+                error_log("✅ Azure MySQL SSL 連線成功");
+            } else {
+                error_log("❌ Azure MySQL SSL 連線失敗: " . $link->connect_error);
+            }
         } catch (Exception $e) {
-            error_log("SSL 連線嘗試失敗: " . $e->getMessage());
+            error_log("❌ SSL 連線異常: " . $e->getMessage());
+            $success = false;
         }
+    } else {
+        // 非 Azure MySQL 的標準連線
+        $success = $link->real_connect($host, $db_user, $db_pass, $dbname, $db_port);
     }
     
     // 檢查連線是否成功
-    if ($link->connect_error) {
-        error_log("❌ MySQL 資料庫連線失敗：" . $link->connect_error);
-        error_log("❌ 連線錯誤碼：" . $link->connect_errno);
+    if (!$success || $link->connect_error) {
+        error_log("❌ MySQL 資料庫連線失敗：" . ($link->connect_error ?? '未知錯誤'));
+        error_log("❌ 連線錯誤碼：" . ($link->connect_errno ?? '未知'));
         // 不要 die()，讓應用程式繼續運行
         $link = null;
     } else {
         // 只有在連線成功時才設定字符集
-        $link->set_charset("utf8");
-        error_log("✅ MySQL 資料庫連線成功");
+        if ($link !== null) {
+            $link->set_charset("utf8");
+            error_log("✅ MySQL 資料庫連線成功，已設定 UTF8 字符集");
+        }
     }
 }
 
