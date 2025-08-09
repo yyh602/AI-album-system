@@ -2,7 +2,9 @@
 session_start();
 
 if (!isset($_SESSION["username"])) {
-    header("Location: login.php");
+    // 使用絕對 URL 避免重導向循環
+    $login_url = "https://" . $_SERVER['HTTP_HOST'] . "/login.php";
+    header("Location: " . $login_url);
     exit();
 }
 
