@@ -135,6 +135,11 @@ if ($db_type === 'postgresql' || $db_type === 'pgsql') {
                     }
                 }
                 
+                public function fetch_row() {
+                    if (!$this->result) return false;
+                    return pg_fetch_row($this->result);
+                }
+                
                 public function fetchAll($mode = 'ASSOC') {
                     if (!$this->result) return [];
                     

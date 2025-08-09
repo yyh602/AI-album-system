@@ -26,16 +26,11 @@ if($username != "" && $password != ""){
             $stmt = $link->prepare($sql);
             $stmt->execute([$password, $username]);
             
-            // 為了兼容性，使用不同的方法計算記錄數
+            // 簡化邏輯：直接嘗試獲取第一筆記錄來判斷是否登入成功
             if ($link instanceof PgSQLWrapper) {
-                // 對於 PgSQLWrapper，需要重新查詢計算記錄數
-                // 使用 prepared statement 避免 pg_escape_string 警告
-                $count_sql = "SELECT COUNT(*) FROM \"user\" WHERE password = ? AND username = ?";
-                $count_stmt = $link->prepare($count_sql);
-                $count_stmt->execute([$password, $username]);
-                $count_result = $count_stmt;
-                $count_row = $count_result->fetch_row();
-                $total_records = $count_row[0];
+                // 嘗試獲取第一筆記錄
+                $user_row = $stmt->fetch('ASSOC');
+                $total_records = $user_row ? 1 : 0;
             } else {
                 $total_records = $stmt->rowCount();
             }
@@ -44,7 +39,9 @@ if($username != "" && $password != ""){
                 // 成功登入, 指定Session變數
                 $_SESSION["login_session"] = true;
                 $_SESSION["username"] = $username;
-                header("Location: welcome.php");
+                // 使用絕對 URL 避免跳轉問題
+                $welcome_url = "https://" . $_SERVER['HTTP_HOST'] . "/welcome.php";
+                header("Location: " . $welcome_url);
                 exit();
             } else {    // 登入失敗
                 $login_error = true;
@@ -61,7 +58,9 @@ if($username != "" && $password != ""){
                     if($total_records > 0){
                         $_SESSION["login_session"] = true;
                         $_SESSION["username"] = $username;
-                        header("Location: welcome.php");
+                        // 使用絕對 URL 避免跳轉問題
+                        $welcome_url = "https://" . $_SERVER['HTTP_HOST'] . "/welcome.php";
+                        header("Location: " . $welcome_url);
                         exit();
                     } else {
                         $login_error = true;
@@ -81,7 +80,9 @@ if($username != "" && $password != ""){
                 if($total_records > 0){
                     $_SESSION["login_session"] = true;
                     $_SESSION["username"] = $username;
-                    header("Location: welcome.php");
+                    // 使用絕對 URL 避免跳轉問題
+                    $welcome_url = "https://" . $_SERVER['HTTP_HOST'] . "/welcome.php";
+                    header("Location: " . $welcome_url);
                     exit();
                 } else {
                     $login_error = true;
