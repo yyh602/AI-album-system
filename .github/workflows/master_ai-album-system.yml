@@ -4,7 +4,10 @@
 name: Build and deploy PHP app to Azure Web App - AI-album-system
 
 on:
-  workflow_dispatch:  # 只保留手動觸發，用於正式發布
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 
 jobs:
   build:
