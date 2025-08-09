@@ -1,23 +1,19 @@
 #!/bin/bash
+# Azure App Service 啟動腳本
 
-# Azure App Service 啟動指令碼
-# 安裝 PostgreSQL 擴展
+# 設定 Nginx client_max_body_size
+echo "設定 Nginx 上傳限制..."
 
-echo "開始安裝 PostgreSQL 擴展..."
+# 建立自定義 nginx 配置（如果可能）
+if [ -d "/etc/nginx" ]; then
+    echo "client_max_body_size 100M;" > /tmp/nginx_upload.conf
+    echo "proxy_read_timeout 300;" >> /tmp/nginx_upload.conf
+    echo "proxy_connect_timeout 300;" >> /tmp/nginx_upload.conf
+    echo "proxy_send_timeout 300;" >> /tmp/nginx_upload.conf
+fi
 
-# 更新套件列表
-apt-get update
+# 顯示目前 PHP 設定
+echo "目前 PHP 設定："
+php -i | grep -E "(upload_max_filesize|post_max_size|max_execution_time|memory_limit)"
 
-# 安裝 PostgreSQL 開發套件
-apt-get install -y libpq-dev
-
-# 安裝 PHP PostgreSQL 擴展
-docker-php-ext-install pdo_pgsql pgsql
-
-# 重新啟動 Apache
-service apache2 restart
-
-echo "PostgreSQL 擴展安裝完成！"
-
-# 啟動 Apache
-apache2-foreground 
+echo "啟動腳本完成"
