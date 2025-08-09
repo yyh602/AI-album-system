@@ -4,7 +4,7 @@
 $host = $_ENV['DB_HOST'] ?? 'album.mysql.database.azure.com';
 $dbname = $_ENV['DB_NAME'] ?? 'album'; // 預設資料庫名稱
 $db_user = $_ENV['DB_USER'] ?? 's1411131020';
-$db_pass = $_ENV['DB_PASS'] ?? '{your-password}'; // 需要設定你的密碼
+$db_pass = $_ENV['DB_PASS'] ?? 'Aa123456'; // 預設密碼
 $db_port = $_ENV['DB_PORT'] ?? '3306';
 $db_type = $_ENV['DB_TYPE'] ?? 'mysql';
 

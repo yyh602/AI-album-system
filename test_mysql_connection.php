@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 // 測試 Azure MySQL 連線
 $host = 'album.mysql.database.azure.com';
 $username = 's1411131020';
-$password = '{your-password}'; // 請替換為實際密碼
+$password = 'Aa123456'; // 正確的密碼
 $database = 'album';
 $port = 3306;
 
