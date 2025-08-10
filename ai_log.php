@@ -5,17 +5,25 @@ if (!isset($_SESSION["username"])) {
     exit();
 }
 require_once("DB_open.php"); // 確保你的資料庫連接檔案存在且正確
+require_once("DB_helper.php");
+
 $username = $_SESSION["username"];
 $name = $username;
-$sql = "SELECT name FROM user WHERE username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "s", $username);
-mysqli_stmt_execute($stmt);
-mysqli_stmt_bind_result($stmt, $result_name);
-if (mysqli_stmt_fetch($stmt)) {
-    $name = $result_name;
+
+// MySQL 查詢用戶名稱
+if ($link instanceof mysqli && $link !== null) {
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "s", $username);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $result_name);
+        if (mysqli_stmt_fetch($stmt)) {
+            $name = $result_name;
+        }
+        mysqli_stmt_close($stmt);
+    }
 }
-mysqli_stmt_close($stmt);
 require_once("DB_close.php"); // 確保你的資料庫關閉檔案存在且正確
 
 // ✅ 你的 Gemini API 金鑰
@@ -78,16 +86,37 @@ if ($is_ajax && $response_text) {
 
 // 歷史日誌讀取
 require("DB_open.php");
+require_once("DB_helper.php");
+
 $diaries = [];
-$diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
-$diary_stmt = mysqli_prepare($link, $diary_sql);
-mysqli_stmt_bind_param($diary_stmt, "s", $username);
-mysqli_stmt_execute($diary_stmt);
-$diary_result = mysqli_stmt_get_result($diary_stmt);
-while ($row = mysqli_fetch_assoc($diary_result)) {
-    $diaries[] = $row;
+if ($link instanceof PgSQLWrapper || $link instanceof PDO) {
+    $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
+    $diary_stmt = $link->prepare($diary_sql);
+    $diary_stmt->execute([$username]);
+    while ($row = $diary_stmt->fetch('ASSOC')) {
+        $diaries[] = $row;
+    }
+} else {
+    if ($link instanceof mysqli) {
+        $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
+        $diary_stmt = mysqli_prepare($link, $diary_sql);
+        mysqli_stmt_bind_param($diary_stmt, "s", $username);
+        mysqli_stmt_execute($diary_stmt);
+        $diary_result = mysqli_stmt_get_result($diary_stmt);
+        while ($row = mysqli_fetch_assoc($diary_result)) {
+            $diaries[] = $row;
+        }
+        mysqli_stmt_close($diary_stmt);
+    } else {
+        // 如果是 PDOWrapper，使用 PDO 方式查詢
+        $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC";
+        $diary_stmt = $link->prepare($diary_sql);
+        $diary_stmt->execute([$username]);
+        while ($row = $diary_stmt->fetch('ASSOC')) {
+            $diaries[] = $row;
+        }
+    }
 }
-mysqli_stmt_close($diary_stmt);
 require_once("DB_close.php");
 ?>
 
@@ -277,7 +306,7 @@ require_once("DB_close.php");
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
   <div class="container-fluid px-3">
     <a class="navbar-brand d-flex align-items-center" href="#">
-      <img src="img/logo.png" width="32" height="32" class="me-2" alt="Logo">
+      <img src="img/logo.svg" width="32" height="32" class="me-2" alt="Logo">
       <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -296,7 +325,7 @@ require_once("DB_close.php");
         </li>
       </ul>
       <div class="d-flex align-items-center ms-auto">
-        <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+                    <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
         <span class="navbar-username"><?php echo htmlspecialchars($name); ?></span>
       </div>
     </div>

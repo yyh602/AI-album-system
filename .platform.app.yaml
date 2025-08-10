@@ -1,0 +1,26 @@
+# Azure App Service 平台設定
+runtime:
+  extensions:
+    - mysqli
+    - gd
+    - zip
+    - curl
+
+variables:
+  env:
+    NGINX_CLIENT_MAX_BODY_SIZE: 100M
+    NGINX_PROXY_READ_TIMEOUT: 300
+    NGINX_PROXY_CONNECT_TIMEOUT: 300
+    
+disk: 2048
+
+web:
+  upstream:
+    socket_family: unix
+  commands:
+    start: "php-fpm -D && nginx -g 'daemon off;'"
+  locations:
+    "/":
+      root: ""
+      index: ["index.php", "login.php"]
+      allow: true

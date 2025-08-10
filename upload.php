@@ -24,17 +24,29 @@ if (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'applica
         exit();
     }
 
-    $sql = "INSERT INTO uploads (username, filename, datetime, latitude, longitude) VALUES (?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($link, $sql);
-    if (!$stmt) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "資料庫錯誤: " . mysqli_error($link)]);
-        exit();
-    }
+    if ($link instanceof mysqli) {
+        $sql = "INSERT INTO uploads (username, filename, datetime, latitude, longitude) VALUES (?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($link, $sql);
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "資料庫錯誤: " . mysqli_error($link)]);
+            exit();
+        }
 
-    mysqli_stmt_bind_param($stmt, "sssdd", $_SESSION["username"], $data['filename'], $data['datetime'], $data['lat'], $data['lon']);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
+        mysqli_stmt_bind_param($stmt, "sssdd", $_SESSION["username"], $data['filename'], $data['datetime'], $data['lat'], $data['lon']);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    } else {
+        // 如果是 PDOWrapper，使用 PDO 方式
+        $sql = "INSERT INTO uploads (username, filename, datetime, latitude, longitude) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $link->prepare($sql);
+        if (!$stmt->execute([$_SESSION["username"], $data['filename'], $data['datetime'], $data['lat'], $data['lon']])) {
+            http_response_code(500);
+            $error = $stmt->errorInfo();
+            echo json_encode(["status" => "error", "message" => "資料庫錯誤: " . ($error[2] ?? '未知錯誤')]);
+            exit();
+        }
+    }
 
     echo json_encode(["status" => "ok"]);
     require_once("DB_close.php");
@@ -53,11 +65,17 @@ if (isset($_FILES['photo'])) {
 
     if (move_uploaded_file($_FILES['photo']['tmp_name'], $upload_path)) {
         // 儲存檔案資訊到資料表
-        $stmt = mysqli_prepare($link, "INSERT INTO photo_records (filename, upload_time) VALUES (?, NOW())");
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "s", $file_name);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+        if ($link instanceof mysqli) {
+            $stmt = mysqli_prepare($link, "INSERT INTO photo_records (filename, upload_time) VALUES (?, NOW())");
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, "s", $file_name);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+            }
+        } else {
+            // 如果是 PDOWrapper，使用 PDO 方式
+            $stmt = $link->prepare("INSERT INTO photo_records (filename, upload_time) VALUES (?, NOW())");
+            $stmt->execute([$file_name]);
         }
 
         echo json_encode(['status' => 'success', 'message' => '檔案上傳成功', 'filename' => $file_name]);

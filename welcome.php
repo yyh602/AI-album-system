@@ -1,27 +1,56 @@
 <?php
-session_start();
+// 檢查 session 狀態，避免重複啟動
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION["username"])) {
-    header("Location: login.php");
+    // 使用絕對 URL 避免重導向循環
+    $login_url = "https://" . $_SERVER['HTTP_HOST'] . "/login.php";
+    header("Location: " . $login_url);
     exit();
 }
 
 require_once("DB_open.php");
+require_once("DB_helper.php");
 
 $username = $_SESSION["username"];
 $name = $username;
 
-$sql = "SELECT name FROM user WHERE username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "s", $username);
-mysqli_stmt_execute($stmt);
-mysqli_stmt_bind_result($stmt, $result_name);
-
-if (mysqli_stmt_fetch($stmt)) {
-    $name = $result_name;
+// MySQL 查詢用戶名稱
+if ($link instanceof mysqli && $link !== null) {
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "s", $username);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $result_name);
+        
+        if (mysqli_stmt_fetch($stmt)) {
+            $name = $result_name;
+        }
+        mysqli_stmt_close($stmt);
+    }
 }
 
-mysqli_stmt_close($stmt);
+// 查詢歷史日誌
+$diaries = [];
+if ($link instanceof mysqli && $link !== null) {
+    $diary_sql = "SELECT d.*, a.cover_photo, a.name as album_name FROM travel_diary d LEFT JOIN albums a ON d.album_id = a.id WHERE d.username = ? ORDER BY d.created_at DESC LIMIT 5";
+    $diary_stmt = mysqli_prepare($link, $diary_sql);
+    if ($diary_stmt) {
+        mysqli_stmt_bind_param($diary_stmt, "s", $username);
+        mysqli_stmt_execute($diary_stmt);
+        $diary_result = mysqli_stmt_get_result($diary_stmt);
+        if ($diary_result) {
+            while ($row = mysqli_fetch_assoc($diary_result)) {
+                $diaries[] = $row;
+            }
+        }
+        mysqli_stmt_close($diary_stmt);
+    }
+}
+
 require_once("DB_close.php");
 ?>
 
@@ -190,6 +219,29 @@ require_once("DB_close.php");
           /* 讓箭頭顏色變深灰 */
           filter: invert(30%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(60%) contrast(90%);
         }
+        
+        /* 歷史日誌樣式 */
+        .history-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .history-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          justify-content: center;
+        }
+        
+        @media (max-width: 576px) {
+          .history-item {
+            width: 100px !important;
+          }
+          .history-item img {
+            width: 100px !important;
+            height: 100px !important;
+          }
+        }
     </style>
 </head>
 <body>
@@ -197,7 +249,7 @@ require_once("DB_close.php");
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="img/logo.png" width="32" height="32" class="me-2">
+          <img src="img/logo.svg" width="32" height="32" class="me-2">
           <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -216,7 +268,7 @@ require_once("DB_close.php");
             </li>
           </ul>
           <div class="d-flex align-items-center ms-auto">
-            <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+            <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
             <span class="navbar-username"><?php echo htmlspecialchars($name); ?></span>
           </div>
         </div>
@@ -252,6 +304,31 @@ require_once("DB_close.php");
         </div>
       </div>
     </div>
+
+    <!-- 歷史日誌區塊（獨立區塊） -->
+    <div class="container" style="max-width: 700px; margin-bottom:32px;">
+      <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
+        <div class="map-label" style="margin-bottom:18px;">歷史日誌</div>
+        <div id="historyLogList" class="history-grid" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
+          <?php if (empty($diaries)): ?>
+            <div style="height:120px;display:flex;align-items:center;justify-content:center;color:#888;width:100%;">尚無日誌</div>
+          <?php else: ?>
+            <?php foreach ($diaries as $d): ?>
+              <div class="history-item" onclick="showDiaryDetail(<?php echo $d['id']; ?>)" style="width:120px;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.2s;">
+                <img src="<?php echo htmlspecialchars($d['cover_photo'] ?? 'img/default_album_cover.png'); ?>" 
+                     style="width:120px;height:120px;object-fit:cover;" 
+                     alt="<?php echo htmlspecialchars($d['album_name']); ?>">
+                <div style="padding:8px;background:#fff;">
+                  <div style="font-size:0.9rem;font-weight:bold;color:#333;text-align:center;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($d['album_name']); ?></div>
+                  <div style="font-size:0.8rem;color:#666;text-align:center;"><?php echo date('Y/m/d', strtotime($d['created_at'])); ?></div>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
     <!-- 地圖總覽區塊（獨立區塊） -->
     <div class="container" style="max-width: 700px; margin-bottom:32px;">
       <div class="map-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
@@ -301,6 +378,66 @@ require_once("DB_close.php");
           }
         }
         loadMemoryCarousel();
+
+        // 顯示日誌詳情
+        async function showDiaryDetail(diaryId) {
+          try {
+            const response = await fetch('get_diary_detail.php?diary_id=' + diaryId);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+              // 建立模態框
+              const modalHtml = `
+                <div class="modal fade" id="diaryDetailModal" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">日誌詳情</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">相簿名稱</label>
+                          <div class="form-control-plaintext">${data.album_name || '未指定相簿'}</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">日誌內容</label>
+                          <textarea class="form-control" rows="8" readonly>${data.content || ''}</textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">建立時間</label>
+                          <div class="form-control-plaintext">${data.created_at || ''}</div>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                        <a href="ai_log.php" class="btn btn-primary">前往AI日誌頁面</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+              
+              // 移除舊的模態框（如果存在）
+              const oldModal = document.getElementById('diaryDetailModal');
+              if (oldModal) {
+                oldModal.remove();
+              }
+              
+              // 新增新的模態框
+              document.body.insertAdjacentHTML('beforeend', modalHtml);
+              
+              // 顯示模態框
+              const modal = new bootstrap.Modal(document.getElementById('diaryDetailModal'));
+              modal.show();
+            } else {
+              alert('載入日誌詳情失敗');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('載入日誌詳情時發生錯誤');
+          }
+        }
     </script>
 </body>
 </html>

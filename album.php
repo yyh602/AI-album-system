@@ -11,17 +11,22 @@ require_once("DB_open.php");
 $username = $_SESSION["username"];
 $name = $username;
 
-$sql = "SELECT name FROM user WHERE username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "s", $username);
-mysqli_stmt_execute($stmt);
-mysqli_stmt_bind_result($stmt, $result_name);
+if ($link instanceof mysqli) {
+    $sql = "SELECT name FROM user WHERE username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $result_name);
 
-if (mysqli_stmt_fetch($stmt)) {
-    $name = $result_name;
+    if (mysqli_stmt_fetch($stmt)) {
+        $name = $result_name;
+    }
+
+    mysqli_stmt_close($stmt);
+} else {
+    // 資料庫連線失敗處理
+    error_log("資料庫連線失敗或類型不正確");
 }
-
-mysqli_stmt_close($stmt);
 require_once("DB_close.php");
 ?>
 <!DOCTYPE html>
@@ -160,7 +165,7 @@ require_once("DB_close.php");
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="img/logo.png" width="32" height="32" class="me-2">
+          <img src="img/logo.svg" width="32" height="32" class="me-2">
           <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -179,7 +184,7 @@ require_once("DB_close.php");
             </li>
           </ul>
           <div class="d-flex align-items-center ms-auto">
-            <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+            <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
             <span class="navbar-username"><?php echo htmlspecialchars($name); ?></span>
           </div>
         </div>
@@ -254,15 +259,26 @@ require_once("DB_close.php");
         let selectedAlbumPhotos = [];
         function resetAlbumModal() {
             selectedAlbumPhotos = [];
-            document.getElementById('albumPhotoGrid').innerHTML = '<div class="upload-add-box" id="uploadAddBox">＋</div>';
-            document.getElementById('uploadStep').style.display = '';
-            document.getElementById('nameStep').style.display = 'none';
-            document.getElementById('modalConfirmBtn').style.display = 'none';
-            document.getElementById('albumNameInput').value = '';
+            const albumPhotoGrid = document.getElementById('albumPhotoGrid');
+            if (albumPhotoGrid) {
+                albumPhotoGrid.innerHTML = '<div class="upload-add-box" id="uploadAddBox">＋</div>';
+            }
+            const uploadStep = document.getElementById('uploadStep');
+            if (uploadStep) uploadStep.style.display = '';
+            const nameStep = document.getElementById('nameStep');
+            if (nameStep) nameStep.style.display = 'none';
+            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+            if (modalConfirmBtn) modalConfirmBtn.style.display = 'none';
+            const albumNameInput = document.getElementById('albumNameInput');
+            if (albumNameInput) albumNameInput.value = '';
         }
         // 動態載入我的相簿
         async function loadMyAlbums() {
             const container = document.getElementById('myAlbums');
+            if (!container) {
+                console.error('myAlbums element not found');
+                return;
+            }
             container.innerHTML = '<span style="color:#888;">載入中...</span>';
             try {
                 const res = await fetch('get_album_photos.php?all_albums=1');
@@ -275,7 +291,7 @@ require_once("DB_close.php");
                         card.innerHTML = `
                             <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
                                 <div class="album-card-img-wrap">
-                                    <img src="${album.cover_photo || 'img/default_album_cover.png'}" alt="${album.name}">
+                                    <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}">
                                 </div>
                                 <div class="album-card-title">${album.name}</div>
                             </a>
@@ -292,6 +308,10 @@ require_once("DB_close.php");
         // 動態載入時間區塊（每月卡片，點擊可看該月所有照片）
         async function loadPhotosByMonth() {
             const container = document.getElementById('albumsByTime');
+            if (!container) {
+                console.log('albumsByTime element not found, skipping loadPhotosByMonth');
+                return;
+            }
             container.innerHTML = '<span style="color:#888;">載入中...</span>';
             try {
                 const res = await fetch('get_album_photos.php?group_photos_by_month=1');
@@ -301,7 +321,7 @@ require_once("DB_close.php");
                     Object.keys(data.photos_by_month).forEach(month => {
                         const photos = data.photos_by_month[month];
                         if (!photos.length) return;
-                        const cover = photos[0].path || 'img/default_album_cover.png';
+                        const cover = photos[0].path || 'img/default_album_cover.svg';
                         const monthKey = photos[0].datetime.substr(0, 7); // YYYY-MM
                         const card = document.createElement('div');
                         card.className = 'album-card-preview';
@@ -383,9 +403,31 @@ require_once("DB_close.php");
             // 預覽照片
             document.getElementById('albumPhotoInput').addEventListener('change', function(e) {
                 const files = Array.from(e.target.files);
-                files.forEach(file => {
+                
+                // 檢查檔案大小和數量限制
+                const maxFileSize = 10 * 1024 * 1024; // 10MB per file
+                const maxTotalSize = 80 * 1024 * 1024; // 80MB total
+                let totalSize = 0;
+                let validFiles = [];
+                
+                for (let file of files) {
+                    if (file.size > maxFileSize) {
+                        alert(`檔案 "${file.name}" 過大，單個檔案不能超過 10MB`);
+                        continue;
+                    }
+                    totalSize += file.size;
+                    if (totalSize > maxTotalSize) {
+                        alert('總檔案大小超過 80MB 限制，請減少檔案數量或壓縮檔案');
+                        break;
+                    }
+                    validFiles.push(file);
+                }
+                
+                // 加入有效檔案
+                validFiles.forEach(file => {
                     selectedAlbumPhotos.push(file);
                 });
+                
                 renderAlbumPhotoGrid();
                 if (selectedAlbumPhotos.length > 0) {
                     document.getElementById('nameStep').style.display = '';
@@ -438,31 +480,54 @@ require_once("DB_close.php");
                     return;
                 }
                 try {
+                    console.log('開始上傳相簿：', albumName);
                     const res = await fetch('save_album.php', {
                         method: 'POST',
                         body: formData
                     });
-                    const result = await res.json();
+                    console.log('伺服器回應狀態：', res.status);
+                    
+                    const responseText = await res.text();
+                    console.log('伺服器回應內容：', responseText);
+                    
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('JSON 解析失敗：', parseError);
+                        alert('伺服器回應格式錯誤：' + responseText);
+                        return;
+                    }
+                    
+                    console.log('解析後的結果：', result);
+                    
                     if (result.status === 'success') {
+                        console.log('相簿建立成功！');
                         // 關閉 modal 並刷新我的相簿
                         bootstrap.Modal.getInstance(document.getElementById('albumModal')).hide();
                         resetAlbumModal();
                         loadMyAlbums();
                     } else {
+                        console.error('相簿建立失敗：', result.message);
                         alert('建立失敗：' + (result.message || '未知錯誤'));
                     }
                 } catch (e) {
+                    console.error('上傳過程發生錯誤：', e);
                     alert('建立失敗，請稍後再試');
                 }
             };
             // 初始載入我的相簿
             loadMyAlbums();
-            loadPhotosByMonth();
+            // loadPhotosByMonth(); // 暫時停用，因為 albumsByTime 元素不存在
         });
 
         // 修正後的 renderAlbumPhotoGrid 函式
         function renderAlbumPhotoGrid() {
             const grid = document.getElementById('albumPhotoGrid');
+            if (!grid) {
+                console.error('albumPhotoGrid element not found');
+                return;
+            }
             grid.innerHTML = ''; // 清除現有預覽
             selectedAlbumPhotos.forEach((file, idx) => {
                 const div = document.createElement('div');

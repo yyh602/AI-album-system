@@ -1,0 +1,80 @@
+# 使用官方 PHP 8.1 Apache 映像檔作為基礎
+FROM php:8.1-apache
+
+# 設定非互動式安裝
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 安裝基本系統依賴
+RUN apt-get update && apt-get install -y \
+    libmagickwand-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libzip-dev \
+    libonig-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libwebp-dev \
+    libxml2-dev \
+    libssl-dev \
+    libpq-dev \
+    exiftool \
+    imagemagick \
+    unzip \
+    git \
+    curl \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 連結 python3 為 python
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# 安裝 PHP 擴展
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) \
+        mysqli \
+        pdo_mysql \
+        pdo_pgsql \
+        exif \
+        gd \
+        zip \
+        mbstring \
+        xml \
+        opcache
+
+# 安裝 ImageMagick 擴展
+RUN pecl install imagick \
+    && docker-php-ext-enable imagick
+
+# 設定 Apache 配置
+RUN a2enmod rewrite
+
+# 複製應用程式檔案
+COPY . /var/www/html/
+
+# 設定工作目錄
+WORKDIR /var/www/html
+
+# 設定檔案權限
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+# 創建 uploads 目錄並設定權限
+RUN mkdir -p /var/www/html/uploads \
+    && chown -R www-data:www-data /var/www/html/uploads \
+    && chmod -R 777 /var/www/html/uploads
+
+# 設定 PHP 配置
+RUN echo "upload_max_filesize = 50M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 50M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit = 512M" >> /usr/local/etc/php/conf.d/uploads.ini
+
+# 暴露端口
+EXPOSE 80
+
+# 啟動 Apache
+CMD ["apache2-foreground"] 

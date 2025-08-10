@@ -12,25 +12,44 @@ $albumId = $_GET["album_id"] ?? 0;
 $username = $_SESSION["username"];
 
 // 驗證相簿所有權並獲取相簿資訊
-$sql = "SELECT id, name, username FROM albums WHERE id = ? AND username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "is", $albumId, $username);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-$album = mysqli_fetch_assoc($result);
+if ($link instanceof mysqli) {
+    $sql = "SELECT id, name, username FROM albums WHERE id = ? AND username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "is", $albumId, $username);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $album = mysqli_fetch_assoc($result);
 
-if (!$album) {
-    header("Location: album.php");
-    exit();
+    if (!$album) {
+        header("Location: album.php");
+        exit();
+    }
+
+    // 獲取相簿中的所有照片
+    $sql = "SELECT * FROM uploads WHERE album_id = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $albumId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $photos = mysqli_fetch_all($result, MYSQLI_ASSOC);
+} else {
+    // 如果是 PDOWrapper，使用 PDO 方式查詢
+    $sql = "SELECT id, name, username FROM albums WHERE id = ? AND username = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$albumId, $username]);
+    $album = $stmt->fetch('ASSOC');
+
+    if (!$album) {
+        header("Location: album.php");
+        exit();
+    }
+
+    // 獲取相簿中的所有照片
+    $sql = "SELECT * FROM uploads WHERE album_id = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$albumId]);
+    $photos = $stmt->fetchAll('ASSOC');
 }
-
-// 獲取相簿中的所有照片
-$sql = "SELECT * FROM uploads WHERE album_id = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "i", $albumId);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-$photos = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 // 計算旅遊期間
 $dates = array_column($photos, 'datetime');
@@ -148,7 +167,7 @@ require_once("DB_close.php");
   <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container-fluid px-3">
       <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="img/logo.png" width="32" height="32" class="me-2">
+                    <img src="img/logo.svg" width="32" height="32" class="me-2">
         <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown">
@@ -161,7 +180,7 @@ require_once("DB_close.php");
           <li class="nav-item"><a class="nav-link" href="ai_log.php">AI生成日誌</a></li>
         </ul>
         <div class="d-flex align-items-center ms-auto">
-          <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+                      <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
           <span class="navbar-username ms-2"><?php echo htmlspecialchars($username); ?></span>
         </div>
       </div>

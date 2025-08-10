@@ -10,19 +10,35 @@ require_once("DB_open.php");
 $photoId = $_GET["photo_id"] ?? 0;
 $username = $_SESSION["username"];
 
-$sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
-        FROM uploads u 
-        JOIN albums a ON u.album_id = a.id 
-        WHERE u.id = ? AND a.username = ?";
-$stmt = mysqli_prepare($link, $sql);
-mysqli_stmt_bind_param($stmt, "is", $photoId, $username);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-$photo = mysqli_fetch_assoc($result);
+if ($link instanceof mysqli) {
+    $sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
+            FROM uploads u 
+            JOIN albums a ON u.album_id = a.id 
+            WHERE u.id = ? AND a.username = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "is", $photoId, $username);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $photo = mysqli_fetch_assoc($result);
 
-if (!$photo) {
-    echo "找不到照片或您沒有權限查看此照片。";
-    exit();
+    if (!$photo) {
+        echo "找不到照片或您沒有權限查看此照片。";
+        exit();
+    }
+} else {
+    // 如果是 PDOWrapper，使用 PDO 方式查詢
+    $sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
+            FROM uploads u 
+            JOIN albums a ON u.album_id = a.id 
+            WHERE u.id = ? AND a.username = ?";
+    $stmt = $link->prepare($sql);
+    $stmt->execute([$photoId, $username]);
+    $photo = $stmt->fetch('ASSOC');
+
+    if (!$photo) {
+        echo "找不到照片或您沒有權限查看此照片。";
+        exit();
+    }
 }
 
 require_once("DB_close.php");
@@ -136,7 +152,7 @@ require_once("DB_close.php");
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="img/logo.png" width="32" height="32" class="me-2">
+            <img src="img/logo.svg" width="32" height="32" class="me-2">
             <span style="font-weight:bold;">AI智慧相簿管理系統</span>
         </a>
         <div class="collapse navbar-collapse">
@@ -146,7 +162,7 @@ require_once("DB_close.php");
                 <li class="nav-item"><a class="nav-link" href="ai_log.php">AI生成日誌</a></li>
             </ul>
             <div class="d-flex align-items-center ms-auto">
-                <img src="img/avatar.png" alt="avatar" class="navbar-avatar">
+                <img src="img/avatar.svg" alt="avatar" class="navbar-avatar">
                 <span class="navbar-username ms-2"><?php echo htmlspecialchars($username); ?></span>
             </div>
         </div>
