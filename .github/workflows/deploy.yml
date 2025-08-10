@@ -1,0 +1,24 @@
+name: Deploy to AwardSpace
+
+on:
+  push:
+    branches:
+      - main  # 當推送到 main 分支時觸發
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /  # 根據你的圖片是 "/"
+          protocol: ftps # 使用 SFTP 或 FTPS
+          port: 221      # 根據你的圖片
