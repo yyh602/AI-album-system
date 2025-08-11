@@ -69,7 +69,7 @@ ini_set('display_errors', 0);
         exit();
     }
     
-    // 嘗試資料庫連線（簡化版本）
+    // 資料庫連線
     try {
         require_once("DB_open.php");
         require_once("DB_helper.php");
@@ -80,96 +80,127 @@ ini_set('display_errors', 0);
         }
         
         // 測試資料庫連線
-        if (false) { // 停用 PostgreSQL 邏輯
+        if ($link instanceof mysqli) {
             $test_result = $link->query("SELECT 1 as test");
             if (!$test_result) {
-                throw new Exception("資料庫查詢失敗");
+                throw new Exception("MySQL 資料庫查詢失敗: " . mysqli_error($link));
             }
+        } else {
+            throw new Exception("資料庫連線類型不支援");
         }
         
     } catch (Exception $db_error) {
-        // 記錄詳細錯誤信息
         error_log("save_album.php 資料庫錯誤: " . $db_error->getMessage());
-        error_log("save_album.php 錯誤檔案: " . $db_error->getFile());
-        error_log("save_album.php 錯誤行號: " . $db_error->getLine());
-        
-        // 資料庫錯誤時，仍然回傳成功（測試模式）
         echo json_encode([
-            'status' => 'success',
-            'message' => '相簿建立成功（無資料庫模式）',
-            'data' => [
-                'album_name' => $albumName,
-                'username' => $username,
-                'file_count' => count($_FILES),
-                'files' => array_keys($_FILES),
-                'db_error' => $db_error->getMessage(),
-                'error_file' => $db_error->getFile(),
-                'error_line' => $db_error->getLine(),
-                'mode' => 'fallback'
-            ]
+            'status' => 'error',
+            'message' => '資料庫連線失敗: ' . $db_error->getMessage()
         ]);
         exit();
     }
     
-    // 處理檔案上傳（簡化版本）
-    $uploadedFiles = [];
-    $uploadDir = 'uploads/' . date('Y/m/d') . '/';
+    // 開始資料庫交易
+    mysqli_begin_transaction($link);
     
-    // 確保目錄存在
-    if (!file_exists($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-    
-    foreach ($_FILES as $fieldName => $file) {
-        if ($file['error'] === UPLOAD_ERR_OK) {
-            $fileName = uniqid() . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filePath = $uploadDir . $fileName;
-            
-            if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                $uploadedFiles[] = [
-                    'original_name' => $file['name'],
-                    'stored_name' => $fileName,
-                    'path' => $filePath,
-                    'size' => $file['size']
-                ];
+    try {
+        // 1. 建立相簿記錄
+        $album_sql = "INSERT INTO album (album_name, username, created_at) VALUES (?, ?, NOW())";
+        $album_stmt = mysqli_prepare($link, $album_sql);
+        
+        if (!$album_stmt) {
+            throw new Exception("相簿建立失敗: " . mysqli_error($link));
+        }
+        
+        mysqli_stmt_bind_param($album_stmt, "ss", $albumName, $username);
+        $album_result = mysqli_stmt_execute($album_stmt);
+        
+        if (!$album_result) {
+            throw new Exception("相簿建立執行失敗: " . mysqli_stmt_error($album_stmt));
+        }
+        
+        $album_id = mysqli_insert_id($link);
+        mysqli_stmt_close($album_stmt);
+        
+        // 2. 處理檔案上傳
+        $uploadedFiles = [];
+        $uploadDir = 'uploads/' . date('Y/m/d') . '/';
+        
+        // 確保目錄存在
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        foreach ($_FILES as $fieldName => $file) {
+            if ($file['error'] === UPLOAD_ERR_OK) {
+                $fileName = uniqid() . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+                $filePath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                    // 3. 建立照片記錄
+                    $photo_sql = "INSERT INTO photo (album_id, original_name, stored_name, file_path, file_size, upload_date) VALUES (?, ?, ?, ?, ?, NOW())";
+                    $photo_stmt = mysqli_prepare($link, $photo_sql);
+                    
+                    if ($photo_stmt) {
+                        mysqli_stmt_bind_param($photo_stmt, "isssi", $album_id, $file['name'], $fileName, $filePath, $file['size']);
+                        $photo_result = mysqli_stmt_execute($photo_stmt);
+                        mysqli_stmt_close($photo_stmt);
+                        
+                        if ($photo_result) {
+                            $uploadedFiles[] = [
+                                'original_name' => $file['name'],
+                                'stored_name' => $fileName,
+                                'path' => $filePath,
+                                'size' => $file['size']
+                            ];
+                        }
+                    }
+                }
             }
         }
+        
+        // 4. 提交交易
+        mysqli_commit($link);
+        
+        // 5. 成功回應
+        echo json_encode([
+            'status' => 'success',
+            'message' => '相簿建立成功',
+            'data' => [
+                'album_id' => $album_id,
+                'album_name' => $albumName,
+                'username' => $username,
+                'uploaded_files' => $uploadedFiles,
+                'total_files' => count($uploadedFiles)
+            ]
+        ]);
+        
+    } catch (Exception $e) {
+        // 6. 回滾交易
+        mysqli_rollback($link);
+        throw $e;
     }
-    
-    // 成功回應
-    echo json_encode([
-        'status' => 'success',
-        'message' => '相簿建立成功',
-        'data' => [
-            'album_name' => $albumName,
-            'username' => $username,
-            'uploaded_files' => $uploadedFiles,
-            'total_files' => count($uploadedFiles)
-        ]
-    ]);
     
 } catch (Exception $e) {
     // 記錄詳細錯誤到日誌
     error_log("save_album.php 致命錯誤: " . $e->getMessage());
     error_log("save_album.php 致命錯誤檔案: " . $e->getFile());
     error_log("save_album.php 致命錯誤行號: " . $e->getLine());
-    error_log("save_album.php 致命錯誤追蹤: " . $e->getTraceAsString());
     
     // 避免 502 錯誤，不設定 HTTP 500 狀態碼
     echo json_encode([
         'status' => 'error',
-        'message' => '伺服器錯誤: ' . $e->getMessage(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine(),
-        'trace' => $e->getTraceAsString()
+        'message' => '伺服器錯誤: ' . $e->getMessage()
     ]);
 } catch (Throwable $t) {
     // 捕獲所有可能的錯誤，包括 Fatal Error
     error_log("save_album.php 嚴重錯誤: " . $t->getMessage());
     echo json_encode([
         'status' => 'error',
-        'message' => '嚴重錯誤: ' . $t->getMessage(),
-        'type' => get_class($t)
+        'message' => '嚴重錯誤: ' . $t->getMessage()
     ]);
+} finally {
+    // 確保資料庫連線關閉
+    if (isset($link) && $link instanceof mysqli) {
+        require_once("DB_close.php");
+    }
 }
 ?>
