@@ -480,7 +480,7 @@ require_once("DB_close.php");
                         console.log(`上傳檔案 ${i + 1}/${selectedAlbumPhotos.length}: ${file.name}`);
                         
                         // 1. 取得 SAS Token
-                        const sasResponse = await fetch('generate_sas_token.php', {
+                        const sasResponse = await fetch('generate_sas_token_final.php', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded',
