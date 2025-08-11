@@ -346,11 +346,16 @@ require_once("DB_close.php");
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">選擇相簿</label>
-            <div id="albumCardList" style="display:flex;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;"></div>
+            <label class="form-label">選擇方式</label>
+            <div class="d-flex gap-2 mb-3">
+              <button type="button" class="btn btn-outline-primary" id="selectAlbumBtn">選擇相簿</button>
+              <button type="button" class="btn btn-outline-success" id="selectPhotosBtn">選擇照片</button>
+            </div>
+            <div id="albumCardList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;"></div>
+            <div id="allPhotosList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;"></div>
           </div>
           <div class="mb-3" id="photoPreviewWrap" style="display:none;">
-            <label class="form-label">相簿照片預覽</label>
+            <label class="form-label">選擇的照片預覽</label>
             <div id="photoPreview" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
           </div>
           <div class="mb-3">
@@ -458,6 +463,38 @@ require_once("DB_close.php");
       font-weight: 500;
       word-break: break-all;
     }
+    
+    .photo-card-select {
+      width: 110px;
+      border: 2px solid #eee;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: border 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 4px 10px 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .photo-card-select.selected {
+      border: 2px solid #28a745;
+      box-shadow: 0 0 0 2px #28a745;
+    }
+    .photo-card-select img {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: #f0f0f0;
+    }
+    .photo-card-select .photo-info {
+      font-size: 0.8rem;
+      color: #666;
+      text-align: center;
+      word-break: break-all;
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -465,16 +502,65 @@ require_once("DB_close.php");
   let selectedAlbumId = null;
   let selectedAlbumName = '';
   let selectedPhotos = [];
+  let currentSelectionMode = 'album'; // 'album' 或 'photos'
+  
   const createLogBtn = document.getElementById('createLogBtn');
   const createLogModal = new bootstrap.Modal(document.getElementById('createLogModal'));
+  const selectAlbumBtn = document.getElementById('selectAlbumBtn');
+  const selectPhotosBtn = document.getElementById('selectPhotosBtn');
+  
   createLogBtn.onclick = () => {
+    resetModal();
+    createLogModal.show();
+  };
+  
+  // 選擇相簿按鈕
+  selectAlbumBtn.onclick = () => {
+    currentSelectionMode = 'album';
+    document.getElementById('albumCardList').style.display = 'flex';
+    document.getElementById('allPhotosList').style.display = 'none';
+    document.getElementById('photoPreviewWrap').style.display = 'none';
     loadAlbums();
+    updateButtonStyles();
+  };
+  
+  // 選擇照片按鈕
+  selectPhotosBtn.onclick = () => {
+    currentSelectionMode = 'photos';
+    document.getElementById('albumCardList').style.display = 'none';
+    document.getElementById('allPhotosList').style.display = 'flex';
+    document.getElementById('photoPreviewWrap').style.display = 'none';
+    loadAllPhotos();
+    updateButtonStyles();
+  };
+  
+  function updateButtonStyles() {
+    if (currentSelectionMode === 'album') {
+      selectAlbumBtn.classList.remove('btn-outline-primary');
+      selectAlbumBtn.classList.add('btn-primary');
+      selectPhotosBtn.classList.remove('btn-success');
+      selectPhotosBtn.classList.add('btn-outline-success');
+    } else {
+      selectPhotosBtn.classList.remove('btn-outline-success');
+      selectPhotosBtn.classList.add('btn-success');
+      selectAlbumBtn.classList.remove('btn-primary');
+      selectAlbumBtn.classList.add('btn-outline-primary');
+    }
+  }
+  
+  function resetModal() {
+    selectedAlbumId = null;
+    selectedAlbumName = '';
+    selectedPhotos = [];
+    currentSelectionMode = 'album';
+    document.getElementById('albumCardList').style.display = 'none';
+    document.getElementById('allPhotosList').style.display = 'none';
     document.getElementById('photoPreviewWrap').style.display = 'none';
     document.getElementById('aiLogEditWrap').style.display = 'none';
     document.getElementById('saveDiaryBtn').style.display = 'none';
     document.getElementById('aiLogEdit').value = '';
-    createLogModal.show();
-  };
+    updateButtonStyles();
+  }
 
   // 載入所有相簿並顯示卡片
   function loadAlbums() {
@@ -507,6 +593,68 @@ require_once("DB_close.php");
           list.innerHTML = '<div class="text-muted">無相簿可選</div>';
         }
       });
+  }
+  
+  // 載入所有照片並顯示卡片
+  function loadAllPhotos() {
+    fetch('get_all_photos.php')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('allPhotosList');
+        list.innerHTML = '';
+        selectedPhotos = [];
+        if (data.status === 'success' && data.photos) {
+          data.photos.forEach(photo => {
+            const card = document.createElement('div');
+            card.className = 'photo-card-select';
+            card.innerHTML = `
+              <img src="${photo.path || photo.filename}" alt="photo" onerror="this.src='img/default_album_cover.svg'">
+              <div class="photo-info">${photo.album_name || '未知相簿'}</div>
+            `;
+            card.onclick = function() {
+              card.classList.toggle('selected');
+              updateSelectedPhotos();
+            };
+            list.appendChild(card);
+          });
+        } else {
+          list.innerHTML = '<div class="text-muted">無照片可選</div>';
+        }
+      });
+  }
+  
+  // 更新選中的照片
+  function updateSelectedPhotos() {
+    const selectedCards = document.querySelectorAll('.photo-card-select.selected');
+    const wrap = document.getElementById('photoPreviewWrap');
+    const grid = document.getElementById('photoPreview');
+    grid.innerHTML = '';
+    selectedPhotos = [];
+    
+    if (selectedCards.length > 0) {
+      selectedCards.forEach(card => {
+        const img = card.querySelector('img');
+        const photoInfo = card.querySelector('.photo-info').textContent;
+        const photoPath = img.src;
+        
+        const previewImg = document.createElement('img');
+        previewImg.src = photoPath;
+        previewImg.style.width = '70px';
+        previewImg.style.height = '70px';
+        previewImg.style.objectFit = 'cover';
+        previewImg.style.borderRadius = '8px';
+        previewImg.style.marginRight = '4px';
+        grid.appendChild(previewImg);
+        
+        selectedPhotos.push({
+          path: photoPath,
+          album_name: photoInfo
+        });
+      });
+      wrap.style.display = '';
+    } else {
+      wrap.style.display = 'none';
+    }
   }
 
   // 載入相簿所有照片並顯示縮圖
@@ -541,23 +689,31 @@ require_once("DB_close.php");
   const submitLogBtn = document.getElementById('submitLogBtn');
   const saveDiaryBtn = document.getElementById('saveDiaryBtn');
   submitLogBtn.onclick = async function() {
-    const albumId = selectedAlbumId;
     const logLength = document.getElementById('logLength').value;
-    if (!albumId) { alert('請選擇相簿'); return; }
     if (!logLength || logLength < 50) { alert('請輸入合理字數'); return; }
-    if (!selectedPhotos.length) { alert('此相簿無照片'); return; }
+    if (!selectedPhotos.length) { alert('請選擇照片'); return; }
+    
     // 組合 prompt
-    let prompt = `請根據以下相簿的所有照片內容，並依照字數 ${logLength} 字，生成一篇日誌。\n`;
+    let prompt = '';
+    if (currentSelectionMode === 'album') {
+      prompt = `請根據以下相簿「${selectedAlbumName}」的所有照片內容，並依照字數 ${logLength} 字，生成一篇日誌。\n`;
+    } else {
+      prompt = `請根據以下選擇的照片內容，並依照字數 ${logLength} 字，生成一篇日誌。\n`;
+    }
+    
     selectedPhotos.forEach((photo, idx) => {
       prompt += `照片${idx+1}: 路徑: ${photo.path || photo.filename}, `;
+      if (photo.album_name) prompt += `相簿: ${photo.album_name}, `;
       if (photo.datetime) prompt += `拍攝時間: ${photo.datetime}, `;
       if (photo.latitude && photo.longitude) prompt += `GPS: (${photo.latitude},${photo.longitude}), `;
       prompt += '\n';
     });
+    
     // 顯示 loading
     document.getElementById('aiLogEditWrap').style.display = '';
     document.getElementById('aiLogEdit').value = 'AI 生成中...';
     saveDiaryBtn.style.display = 'none';
+    
     // 用 fetch POST 給自己
     const formData = new FormData();
     formData.append('message', prompt);
@@ -583,10 +739,20 @@ require_once("DB_close.php");
   saveDiaryBtn.onclick = async function() {
     const content = document.getElementById('aiLogEdit').value.trim();
     if (!content) { alert('日誌內容不可為空'); return; }
+    
     const formData = new FormData();
-    formData.append('album_id', selectedAlbumId);
-    formData.append('album_name', selectedAlbumName);
+    if (currentSelectionMode === 'album') {
+      formData.append('album_id', selectedAlbumId);
+      formData.append('album_name', selectedAlbumName);
+    } else {
+      // 如果是選擇照片模式，使用第一個照片的相簿資訊或自定義名稱
+      const firstPhoto = selectedPhotos[0];
+      formData.append('album_id', 0); // 0 表示自定義選擇
+      formData.append('album_name', '自定義照片選擇');
+    }
     formData.append('content', content);
+    formData.append('selection_mode', currentSelectionMode);
+    
     // AJAX 儲存
     const resp = await fetch('save_diary.php', { method: 'POST', body: formData });
     const result = await resp.json();
