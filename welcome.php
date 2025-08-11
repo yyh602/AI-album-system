@@ -363,7 +363,7 @@ require_once("DB_close.php");
                 item.innerHTML = `
                   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;">
                     <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
-                      <img src="img/default_album_cover.svg" alt="${album.name}" style="width:180px;height:180px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                                             <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}" style="width:180px;height:180px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
                       <div style="margin-top:10px;font-size:1.1rem;font-weight:bold;color:#1976d2;text-align:center;">${album.name}</div>
                     </a>
                   </div>
