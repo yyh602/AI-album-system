@@ -43,18 +43,25 @@ try {
     $extension = $_POST['extension'] ?? 'jpg';
     $blobName = uniqid() . '.' . $extension;
     
-    // 生成 SAS Token
+    // 使用 Azure Storage REST API 的標準格式 - 修正版本
     $startTime = gmdate('Y-m-d\TH:i:s\Z');
     $endTime = gmdate('Y-m-d\TH:i:s\Z', strtotime('+1 hour'));
     
-    $permissions = 'w';
-    $resource = 'b';
+    // 修正的權限設定
+    $permissions = 'w'; // 只允許寫入
+    $resource = 'b'; // blob
     $version = '2020-04-08';
     
+    // 使用標準的 canonicalized resource 格式
     $canonicalizedResource = "/blob/{$accountName}/{$containerName}/{$blobName}";
+    
+    // 修正的 string to sign - 根據 Azure 實際使用的格式
     $stringToSign = "{$permissions}\n{$startTime}\n{$endTime}\n{$canonicalizedResource}\n\n\n{$version}\n{$resource}";
     
+    // 生成簽名
     $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($accountKey), true));
+    
+    // 生成 SAS Token
     $sasToken = "sv={$version}&st={$startTime}&se={$endTime}&sp={$permissions}&sr={$resource}&sig=" . urlencode($signature);
     
     // 返回上傳資訊
@@ -62,7 +69,18 @@ try {
         'success' => true,
         'uploadUrl' => "https://{$accountName}.blob.core.windows.net/{$containerName}/{$blobName}?{$sasToken}",
         'blobName' => $blobName,
-        'blobUrl' => "https://{$accountName}.blob.core.windows.net/{$containerName}/{$blobName}"
+        'blobUrl' => "https://{$accountName}.blob.core.windows.net/{$containerName}/{$blobName}",
+        'debug' => [
+            'accountName' => $accountName,
+            'containerName' => $containerName,
+            'blobName' => $blobName,
+            'permissions' => $permissions,
+            'resource' => $resource,
+            'canonicalizedResource' => $canonicalizedResource,
+            'stringToSign' => $stringToSign,
+            'signature' => $signature,
+            'sasToken' => $sasToken
+        ]
     ]);
     
 } catch (Exception $e) {

@@ -54,8 +54,8 @@ try {
     // 修正的 canonicalized resource
     $canonicalizedResource = "/blob/{$accountName}/{$containerName}/{$blobName}";
     
-    // 修正的 string to sign
-    $stringToSign = "{$permissions}\n{$startTime}\n{$endTime}\n{$canonicalizedResource}\n\n\n{$version}\n";
+    // 修正的 string to sign - 根據 Azure 實際使用的格式
+    $stringToSign = "{$permissions}\n{$startTime}\n{$endTime}\n{$canonicalizedResource}\n\n\n{$version}\n{$resource}";
     
     // 生成簽名
     $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($accountKey), true));
