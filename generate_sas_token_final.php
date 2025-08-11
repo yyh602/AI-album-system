@@ -47,8 +47,8 @@ try {
     $startTime = gmdate('Y-m-d\TH:i:s\Z');
     $endTime = gmdate('Y-m-d\TH:i:s\Z', strtotime('+1 hour'));
     
-    // 使用完整的寫入權限組合
-    $permissions = 'wac'; // Write, Add, Create
+    // 使用最簡單的寫入權限
+    $permissions = 'w'; // Write only
     $resource = 'b'; // blob
     $version = '2020-04-08';
     
