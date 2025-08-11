@@ -157,7 +157,20 @@ ini_set('display_errors', 0);
             }
         }
         
-        // 4. 提交交易
+        // 4. 更新相簿封面（使用第一張照片）
+        if (!empty($uploadedFiles)) {
+            $firstPhotoPath = $uploadedFiles[0]['path'];
+            $update_cover_sql = "UPDATE albums SET cover_photo = ? WHERE id = ?";
+            $update_cover_stmt = mysqli_prepare($link, $update_cover_sql);
+            
+            if ($update_cover_stmt) {
+                mysqli_stmt_bind_param($update_cover_stmt, "si", $firstPhotoPath, $album_id);
+                mysqli_stmt_execute($update_cover_stmt);
+                mysqli_stmt_close($update_cover_stmt);
+            }
+        }
+        
+        // 5. 提交交易
         mysqli_commit($link);
         
         // 5. 成功回應

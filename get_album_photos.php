@@ -18,13 +18,13 @@ $username = $_SESSION["username"];
 // 新增：支援 all_albums=1，回傳所有相簿
 if (isset($_GET['all_albums']) && $_GET['all_albums'] == 1) {
     if (false) { // 停用 PostgreSQL 邏輯
-        $sql = "SELECT id, name FROM albums WHERE username = ? ORDER BY created_at DESC";
+        $sql = "SELECT id, name, cover_photo FROM albums WHERE username = ? ORDER BY created_at DESC";
         $stmt = $link->prepare($sql);
         $stmt->execute([$username]);
         $albums = $stmt->fetchAll('ASSOC');
     } else {
         if ($link instanceof mysqli) {
-            $sql = "SELECT id, name FROM albums WHERE username = ? ORDER BY created_at DESC";
+            $sql = "SELECT id, name, cover_photo FROM albums WHERE username = ? ORDER BY created_at DESC";
             $stmt = mysqli_prepare($link, $sql);
             mysqli_stmt_bind_param($stmt, "s", $username);
             mysqli_stmt_execute($stmt);
