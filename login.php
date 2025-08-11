@@ -144,13 +144,7 @@ if($username != "" && $password != ""){
         <label for="Password" class="form-label">密碼</label>
         <input type="password" class="form-control" id="Password" name="Password" maxlength="10" required>
       </div>
-      <div class="mb-3">
-        <label for="Captcha" class="form-label">驗證碼</label>
-        <div class="d-flex align-items-center">
-          <input type="text" class="form-control me-2" id="Captcha" name="Captcha" maxlength="5" required>
-          <img src="captcha.php" alt="CAPTCHA" onclick="this.src='captcha.php?'+Math.random()" style="cursor: pointer;" title="點擊圖片可重新產生">
-        </div>
-      </div>
+
       <div class="d-grid">
         <button type="submit" class="btn btn-login">登入系統</button>
       </div>
