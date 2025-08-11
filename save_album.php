@@ -103,7 +103,7 @@ ini_set('display_errors', 0);
     
     try {
         // 1. 建立相簿記錄
-        $album_sql = "INSERT INTO albums (album_name, username, created_at) VALUES (?, ?, NOW())";
+        $album_sql = "INSERT INTO albums (name, username, created_at) VALUES (?, ?, NOW())";
         $album_stmt = mysqli_prepare($link, $album_sql);
         
         if (!$album_stmt) {
