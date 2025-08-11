@@ -89,6 +89,10 @@ ini_set('display_errors', 0);
             throw new Exception("資料庫連線類型不支援");
         }
         
+        // 初始化 Azure Storage
+        require_once("azure_storage.php");
+        $azureStorage = new AzureStorage();
+        
     } catch (Exception $db_error) {
         error_log("save_album.php 資料庫錯誤: " . $db_error->getMessage());
         echo json_encode([
@@ -120,51 +124,47 @@ ini_set('display_errors', 0);
         $album_id = mysqli_insert_id($link);
         mysqli_stmt_close($album_stmt);
         
-        // 2. 處理檔案上傳
+        // 2. 處理檔案上傳到 Azure Storage
         $uploadedFiles = [];
-        $uploadDir = 'uploads/' . date('Y/m/d') . '/';
-        
-        // 確保目錄存在
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
         
         foreach ($_FILES as $fieldName => $file) {
             if ($file['error'] === UPLOAD_ERR_OK) {
-                $fileName = uniqid() . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filePath = $uploadDir . $fileName;
-                
-                if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                                         // 3. 建立照片記錄 - 使用正確的欄位名稱
-                     $photo_sql = "INSERT INTO photos (album_id, filename, path, username, datetime, created_at) VALUES (?, ?, ?, ?, NOW(), NOW())";
-                     $photo_stmt = mysqli_prepare($link, $photo_sql);
-                     
-                     if ($photo_stmt) {
-                         mysqli_stmt_bind_param($photo_stmt, "isss", $album_id, $file['name'], $filePath, $username);
+                try {
+                    // 上傳到 Azure Storage Blob
+                    $blobUrl = $azureStorage->uploadFromTemp($file['tmp_name'], $file['name']);
+                    
+                    // 3. 建立照片記錄 - 儲存 Blob URL
+                    $photo_sql = "INSERT INTO photos (album_id, filename, path, username, datetime, created_at) VALUES (?, ?, ?, ?, NOW(), NOW())";
+                    $photo_stmt = mysqli_prepare($link, $photo_sql);
+                    
+                    if ($photo_stmt) {
+                        mysqli_stmt_bind_param($photo_stmt, "isss", $album_id, $file['name'], $blobUrl, $username);
                         $photo_result = mysqli_stmt_execute($photo_stmt);
                         mysqli_stmt_close($photo_stmt);
                         
                         if ($photo_result) {
                             $uploadedFiles[] = [
                                 'original_name' => $file['name'],
-                                'stored_name' => $fileName,
-                                'path' => $filePath,
+                                'blob_url' => $blobUrl,
                                 'size' => $file['size']
                             ];
                         }
                     }
+                } catch (Exception $upload_error) {
+                    error_log("Azure Storage 上傳失敗: " . $upload_error->getMessage());
+                    throw new Exception("檔案上傳失敗: " . $upload_error->getMessage());
                 }
             }
         }
         
         // 4. 更新相簿封面（使用第一張照片）
         if (!empty($uploadedFiles)) {
-            $firstPhotoPath = $uploadedFiles[0]['path'];
+            $firstPhotoBlobUrl = $uploadedFiles[0]['blob_url'];
             $update_cover_sql = "UPDATE albums SET cover_photo = ? WHERE id = ?";
             $update_cover_stmt = mysqli_prepare($link, $update_cover_sql);
             
             if ($update_cover_stmt) {
-                mysqli_stmt_bind_param($update_cover_stmt, "si", $firstPhotoPath, $album_id);
+                mysqli_stmt_bind_param($update_cover_stmt, "si", $firstPhotoBlobUrl, $album_id);
                 mysqli_stmt_execute($update_cover_stmt);
                 mysqli_stmt_close($update_cover_stmt);
             }
