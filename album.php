@@ -499,7 +499,8 @@ require_once("DB_close.php");
                             body: file,
                             headers: {
                                 'x-ms-blob-type': 'BlockBlob',
-                                'Content-Type': file.type
+                                'Content-Type': file.type,
+                                'Content-Length': file.size
                             }
                         });
                         
