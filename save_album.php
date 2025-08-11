@@ -103,7 +103,7 @@ ini_set('display_errors', 0);
     
     try {
         // 1. 建立相簿記錄
-        $album_sql = "INSERT INTO album (album_name, username, created_at) VALUES (?, ?, NOW())";
+        $album_sql = "INSERT INTO albums (album_name, username, created_at) VALUES (?, ?, NOW())";
         $album_stmt = mysqli_prepare($link, $album_sql);
         
         if (!$album_stmt) {
@@ -136,7 +136,7 @@ ini_set('display_errors', 0);
                 
                 if (move_uploaded_file($file['tmp_name'], $filePath)) {
                     // 3. 建立照片記錄
-                    $photo_sql = "INSERT INTO photo (album_id, original_name, stored_name, file_path, file_size, upload_date) VALUES (?, ?, ?, ?, ?, NOW())";
+                    $photo_sql = "INSERT INTO photos (album_id, original_name, stored_name, file_path, file_size, upload_date) VALUES (?, ?, ?, ?, ?, NOW())";
                     $photo_stmt = mysqli_prepare($link, $photo_sql);
                     
                     if ($photo_stmt) {
