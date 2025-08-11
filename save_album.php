@@ -135,12 +135,12 @@ ini_set('display_errors', 0);
                 $filePath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                    // 3. 建立照片記錄
-                    $photo_sql = "INSERT INTO photos (album_id, original_name, stored_name, file_path, file_size, upload_date) VALUES (?, ?, ?, ?, ?, NOW())";
-                    $photo_stmt = mysqli_prepare($link, $photo_sql);
-                    
-                    if ($photo_stmt) {
-                        mysqli_stmt_bind_param($photo_stmt, "isssi", $album_id, $file['name'], $fileName, $filePath, $file['size']);
+                                         // 3. 建立照片記錄 - 使用正確的欄位名稱
+                     $photo_sql = "INSERT INTO photos (album_id, filename, path, username, datetime, created_at) VALUES (?, ?, ?, ?, NOW(), NOW())";
+                     $photo_stmt = mysqli_prepare($link, $photo_sql);
+                     
+                     if ($photo_stmt) {
+                         mysqli_stmt_bind_param($photo_stmt, "isss", $album_id, $file['name'], $filePath, $username);
                         $photo_result = mysqli_stmt_execute($photo_stmt);
                         mysqli_stmt_close($photo_stmt);
                         
