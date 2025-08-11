@@ -234,10 +234,15 @@ try {
             $fileName = $fileNames[$i] ?? 'unknown.jpg';
             
             // 抓取 EXIF 資料
+            error_log("開始處理檔案: $fileName, Blob URL: $blobUrl");
             $exifData = extractExifFromBlob($blobUrl);
             $datetime = $exifData['datetime'] ?? date('Y-m-d H:i:s');
             $latitude = $exifData['latitude'] ?? null;
             $longitude = $exifData['longitude'] ?? null;
+            
+            // 記錄 EXIF 抓取結果
+            error_log("EXIF 抓取結果 - 檔案: $fileName, 日期: $datetime, 緯度: $latitude, 經度: $longitude");
+            error_log("完整 EXIF 資料: " . json_encode($exifData));
             
             // 建立照片記錄（包含 EXIF 資料）
             $photo_sql = "INSERT INTO photos (album_id, filename, path, username, datetime, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
