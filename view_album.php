@@ -211,9 +211,9 @@ require_once("DB_close.php");
       <?php else: ?>
         <?php foreach ($photos as $photo): ?>
           <div class="photo-item">
-            <a href="photo_detail.php?photo_id=<?php echo $photo['id']; ?>">
-              <img src="<?php echo htmlspecialchars($photo['filename']); ?>" alt="<?php echo htmlspecialchars(basename($photo['filename'])); ?>">
-            </a>
+                         <a href="photo_detail.php?photo_id=<?php echo $photo['id']; ?>">
+               <img src="<?php echo htmlspecialchars($photo['path']); ?>" alt="<?php echo htmlspecialchars(basename($photo['filename'])); ?>">
+             </a>
             <div class="photo-info">
               檔案: <?php echo htmlspecialchars(basename($photo['filename'])); ?><br>
               <?php if ($photo['latitude'] && $photo['longitude']): ?>
@@ -253,9 +253,9 @@ require_once("DB_close.php");
 
       const bounds = [];
       gpsPhotos.forEach(photo => {
-        const marker = L.marker([photo.latitude, photo.longitude])
-          .bindPopup(`<img src="${photo.filename}" style="max-width: 200px;"><br>${photo.datetime}`)
-          .addTo(map);
+                 const marker = L.marker([photo.latitude, photo.longitude])
+           .bindPopup(`<img src="${photo.path}" style="max-width: 200px;"><br>${photo.datetime}`)
+           .addTo(map);
         bounds.push([photo.latitude, photo.longitude]);
       });
 
