@@ -11,10 +11,10 @@ $photoId = $_GET["photo_id"] ?? 0;
 $username = $_SESSION["username"];
 
 if ($link instanceof mysqli) {
-    $sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
-            FROM uploads u 
-            JOIN albums a ON u.album_id = a.id 
-            WHERE u.id = ? AND a.username = ?";
+    $sql = "SELECT p.*, a.username AS album_owner, a.name AS album_name 
+            FROM photos p 
+            JOIN albums a ON p.album_id = a.id 
+            WHERE p.id = ? AND a.username = ?";
     $stmt = mysqli_prepare($link, $sql);
     mysqli_stmt_bind_param($stmt, "is", $photoId, $username);
     mysqli_stmt_execute($stmt);
@@ -27,10 +27,10 @@ if ($link instanceof mysqli) {
     }
 } else {
     // 如果是 PDOWrapper，使用 PDO 方式查詢
-    $sql = "SELECT u.*, a.username AS album_owner, a.name AS album_name 
-            FROM uploads u 
-            JOIN albums a ON u.album_id = a.id 
-            WHERE u.id = ? AND a.username = ?";
+    $sql = "SELECT p.*, a.username AS album_owner, a.name AS album_name 
+            FROM photos p 
+            JOIN albums a ON p.album_id = a.id 
+            WHERE p.id = ? AND a.username = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$photoId, $username]);
     $photo = $stmt->fetch('ASSOC');
@@ -191,7 +191,7 @@ require_once("DB_close.php");
 
     <!-- 照片 -->
     <div class="text-center mb-5">
-        <img src="<?php echo htmlspecialchars($photo['filename']); ?>" class="photo-img" alt="photo">
+        <img src="<?php echo htmlspecialchars($photo['path']); ?>" class="photo-img" alt="photo">
     </div>
 
     <!-- 拍攝地點與地圖 / 或警告 -->
