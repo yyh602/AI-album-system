@@ -1,0 +1,35 @@
+# 系統檔案
+.DS_Store
+Thumbs.db
+
+# IDE 檔案
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日誌檔案
+*.log
+php_errors.log
+
+# 暫存檔案
+*.tmp
+*.temp
+
+# 上傳檔案（保留目錄結構）
+uploads/*
+!uploads/.gitkeep
+
+# 大型工具目錄
+ImageMagick-7.1.1-Q16-HDRI/
+exiftool-13.32_64/
+
+# 測試檔案
+face_test/uploads/
+face_test/faces/
+face_test/group/
+face_test/subimages/
+
+# 環境檔案
+.env
+.env.local
