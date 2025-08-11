@@ -1,21 +1,8 @@
 <?php
-session_start();
 header('Content-Type: application/json');
 
-// 檢查登入狀態
-if (!isset($_SESSION['username'])) {
-    echo json_encode(['error' => '請先登入']);
-    exit();
-}
-
-// 檢查請求方法
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['error' => '無效的請求方法']);
-    exit();
-}
-
 try {
-    // 取得環境變數
+    // 檢查環境變數
     $connectionString = getenv('AZURE_STORAGE_CONNECTION_STRING');
     $containerName = getenv('AZURE_STORAGE_CONTAINER_NAME') ?: 'photos';
     
@@ -39,47 +26,56 @@ try {
         throw new Exception('Invalid connection string');
     }
     
-    // 生成 Blob 名稱
-    $extension = $_POST['extension'] ?? 'jpg';
-    $blobName = uniqid() . '.' . $extension;
-    
-    // 使用 Azure Storage REST API 的標準格式 - 最終版本
+    // 生成修正後的 SAS Token
     $startTime = gmdate('Y-m-d\TH:i:s\Z');
     $endTime = gmdate('Y-m-d\TH:i:s\Z', strtotime('+1 hour'));
-    
-    // 使用最簡單的寫入權限
-    $permissions = 'w'; // Write only
-    $resource = 'b'; // blob
+    $permissions = 'w';
+    $resource = 'b';
     $version = '2020-04-08';
-    
-    // 使用標準的 canonicalized resource 格式
+    $blobName = 'test-' . uniqid() . '.txt';
     $canonicalizedResource = "/blob/{$accountName}/{$containerName}/{$blobName}";
     
-    // 修正的 string to sign - 根據 Azure 錯誤訊息調整
+    // 修正的 string to sign
     $stringToSign = "{$permissions}\n{$startTime}\n{$endTime}\n{$canonicalizedResource}\n\n\n\n{$version}\n{$resource}\n\n\n\n\n\n";
-    
-    // 生成簽名
     $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($accountKey), true));
-    
-    // 生成 SAS Token
     $sasToken = "sv={$version}&st={$startTime}&se={$endTime}&sp={$permissions}&sr={$resource}&sig=" . urlencode($signature);
+    $uploadUrl = "https://{$accountName}.blob.core.windows.net/{$containerName}/{$blobName}?{$sasToken}";
     
-    // 返回上傳資訊
+    // 測試上傳
+    $testContent = 'Hello Azure Storage! ' . date('Y-m-d H:i:s');
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $uploadUrl);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $testContent);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'x-ms-blob-type: BlockBlob',
+        'Content-Type: text/plain',
+        'Content-Length: ' . strlen($testContent)
+    ]);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+    
     echo json_encode([
-        'success' => true,
-        'uploadUrl' => "https://{$accountName}.blob.core.windows.net/{$containerName}/{$blobName}?{$sasToken}",
+        'success' => $httpCode === 201,
+        'accountName' => $accountName,
+        'containerName' => $containerName,
         'blobName' => $blobName,
-        'blobUrl' => "https://{$accountName}.blob.core.windows.net/{$containerName}/{$blobName}",
-        'debug' => [
-            'accountName' => $accountName,
-            'containerName' => $containerName,
-            'blobName' => $blobName,
-            'permissions' => $permissions,
-            'resource' => $resource,
-            'canonicalizedResource' => $canonicalizedResource,
-            'stringToSign' => $stringToSign,
-            'signature' => $signature,
-            'sasToken' => $sasToken
+        'uploadUrl' => $uploadUrl,
+        'stringToSign' => $stringToSign,
+        'signature' => $signature,
+        'sasToken' => $sasToken,
+        'result' => [
+            'httpCode' => $httpCode,
+            'response' => $response,
+            'error' => $error,
+            'uploaded' => $httpCode === 201
         ]
     ]);
     
