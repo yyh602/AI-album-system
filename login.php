@@ -1,61 +1,4 @@
 <?php
-<<<<<<< HEAD
-session_start();
-
-// 初始化變數
-$username = "";
-$password = "";
-$captcha_input = "";
-$login_error = false;
-
-// 取得表單欄位值
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    if (isset($_POST["Username"]))
-        $username = trim($_POST["Username"]);
-
-    if (isset($_POST["Password"]))
-        $password = $_POST["Password"];
-
-    if (isset($_POST["Captcha"]))
-        $captcha_input = strtoupper(trim($_POST["Captcha"]));
-
-    // 驗證碼比對
-    if (!isset($_SESSION["captcha"]) || $captcha_input !== $_SESSION["captcha"]) {
-        $login_error = true;
-    } else {
-        // 檢查帳號與密碼
-        if ($username !== "" && $password !== "") {
-            require_once("DB_open.php");
-
-            // 使用 prepared statements 避免 SQL Injection
-            $stmt = mysqli_prepare($link, "SELECT username, password FROM user WHERE username = ?");
-            mysqli_stmt_bind_param($stmt, "s", $username);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_store_result($stmt);
-
-            if (mysqli_stmt_num_rows($stmt) > 0) {
-                mysqli_stmt_bind_result($stmt, $db_username, $db_hashed_password);
-                mysqli_stmt_fetch($stmt);
-
-                // 驗證密碼
-                if (password_verify($password, $db_hashed_password)) {
-                    $_SESSION["login_session"] = true;
-                    $_SESSION["username"] = $db_username;
-                    header("Location: welcome.php");
-                    exit;
-                } else {
-                    $login_error = true;
-                }
-            } else {
-                $login_error = true;
-            }
-
-            mysqli_stmt_close($stmt);
-            require_once("DB_close.php");
-        } else {
-            $login_error = true;
-        }
-=======
 // 檢查 session 狀態，避免重複啟動
 if (session_status() == PHP_SESSION_NONE) {
     session_start();    //啟用交談期
@@ -115,7 +58,6 @@ if($username != "" && $password != ""){
     } catch (Exception $e) {
         $login_error = true;
         error_log("資料庫連接錯誤: " . $e->getMessage());
->>>>>>> 4d9ec2a1e3f1297cbcd8015f57c4dc8041ef2309
     }
 }
 ?>
