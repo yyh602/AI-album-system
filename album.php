@@ -291,7 +291,7 @@ require_once("DB_close.php");
                         card.innerHTML = `
                             <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
                                 <div class="album-card-img-wrap">
-                                    <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}">
+                                    <img src="img/default_album_cover.svg" alt="${album.name}">
                                 </div>
                                 <div class="album-card-title">${album.name}</div>
                             </a>

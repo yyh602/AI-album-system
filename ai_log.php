@@ -377,7 +377,7 @@ require_once("DB_close.php");
   <div id="historyDiaryList" class="history-grid">
     <?php foreach ($diaries as $d): ?>
       <div class="history-item" onclick="showDiaryDetail(<?php echo $d['id']; ?>)">
-        <img src="<?php echo htmlspecialchars($d['cover_photo'] ?? 'img/default_album_cover.png'); ?>" 
+                        <img src="img/default_album_cover.svg" 
              class="history-item-image" 
              alt="<?php echo htmlspecialchars($d['album_name']); ?>">
         <div class="history-item-overlay">
@@ -491,7 +491,7 @@ require_once("DB_close.php");
             const card = document.createElement('div');
             card.className = 'album-card-select';
             card.innerHTML = `
-              <img src="${album.cover_photo || 'img/default_album_cover.png'}" alt="cover">
+                              <img src="img/default_album_cover.svg" alt="cover">
               <div class="album-title">${album.name}</div>
             `;
             card.onclick = function() {
