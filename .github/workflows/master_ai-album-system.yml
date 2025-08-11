@@ -22,6 +22,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
+          extensions: mysqli, gd, exif, imagick, curl
+          ini-values: upload_max_filesize=100M, post_max_size=100M, max_execution_time=7200, memory_limit=512M
 
       - name: Check if composer.json exists
         id: check_files
