@@ -52,7 +52,7 @@ try {
     $version = '2020-04-08';
     
     $canonicalizedResource = "/blob/{$accountName}/{$containerName}/{$blobName}";
-    $stringToSign = "{$permissions}\n{$startTime}\n{$endTime}\n{$canonicalizedResource}\n\n\n{$version}\n{$resource}";
+    $stringToSign = "{$permissions}\n{$startTime}\n{$endTime}\n{$canonicalizedResource}\n\n\n{$version}\n";
     
     $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($accountKey), true));
     $sasToken = "sv={$version}&st={$startTime}&se={$endTime}&sp={$permissions}&sr={$resource}&sig=" . urlencode($signature);
