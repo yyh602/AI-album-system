@@ -449,7 +449,7 @@ require_once("DB_close.php");
             // 取消時清空
             document.getElementById('modalCancelBtn').onclick = resetAlbumModal;
             document.getElementById('modalCloseBtn').onclick = resetAlbumModal;
-            // 確認送出（支援前端 HEIC 轉 JPG 並讀 EXIF）
+            // 確認送出（直接上傳到 Azure Storage）
             document.getElementById('modalConfirmBtn').onclick = async function() {
                 const albumName = document.getElementById('albumNameInput').value.trim();
                 console.log('送出相簿名稱：', albumName);
@@ -461,34 +461,74 @@ require_once("DB_close.php");
                     alert('請先選擇照片');
                     return;
                 }
-                const formData = new FormData();
                 
-                formData.append('albumName', albumName);
-                let validPhotoCount = 0;
-                let errorFiles = [];
-                for (let idx = 0; idx < selectedAlbumPhotos.length; idx++) {
-                    let file = selectedAlbumPhotos[idx];
-                    // 直接 append，無論是 JPG 還是 HEIC
-                    formData.append('photo' + validPhotoCount, file);
-                    validPhotoCount++;
-                }
-                if (errorFiles.length > 0) {
-                    alert('下列檔案處理失敗：\n' + errorFiles.join('\n'));
-                }
-                if (validPhotoCount === 0) {
-                    alert('所有檔案都無法上傳，請確認檔案格式或先轉成 JPG。');
-                    return;
-                }
                 try {
                     console.log('開始上傳相簿：', albumName);
-                    const res = await fetch('save_album.php', {
+                    
+                    // 顯示上傳進度
+                    const confirmBtn = document.getElementById('modalConfirmBtn');
+                    const originalText = confirmBtn.textContent;
+                    confirmBtn.textContent = '上傳中...';
+                    confirmBtn.disabled = true;
+                    
+                    const blobUrls = [];
+                    const fileNames = [];
+                    
+                    // 逐一上傳檔案到 Azure Storage
+                    for (let i = 0; i < selectedAlbumPhotos.length; i++) {
+                        const file = selectedAlbumPhotos[i];
+                        console.log(`上傳檔案 ${i + 1}/${selectedAlbumPhotos.length}: ${file.name}`);
+                        
+                        // 1. 取得 SAS Token
+                        const sasResponse = await fetch('generate_sas_token.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `extension=${file.name.split('.').pop()}`
+                        });
+                        
+                        const sasResult = await sasResponse.json();
+                        if (!sasResult.success) {
+                            throw new Error('取得上傳權限失敗: ' + sasResult.error);
+                        }
+                        
+                        // 2. 上傳到 Azure Storage
+                        const uploadResponse = await fetch(sasResult.uploadUrl, {
+                            method: 'PUT',
+                            body: file,
+                            headers: {
+                                'x-ms-blob-type': 'BlockBlob',
+                                'Content-Type': file.type
+                            }
+                        });
+                        
+                        if (!uploadResponse.ok) {
+                            throw new Error(`檔案上傳失敗: ${uploadResponse.status} ${uploadResponse.statusText}`);
+                        }
+                        
+                        blobUrls.push(sasResult.blobUrl);
+                        fileNames.push(file.name);
+                        
+                        // 更新進度
+                        confirmBtn.textContent = `上傳中... ${i + 1}/${selectedAlbumPhotos.length}`;
+                    }
+                    
+                    // 3. 儲存 Blob URL 到資料庫
+                    const formData = new FormData();
+                    formData.append('albumName', albumName);
+                    blobUrls.forEach(url => formData.append('blobUrls[]', url));
+                    fileNames.forEach(name => formData.append('fileNames[]', name));
+                    
+                    const saveResponse = await fetch('save_album_blob.php', {
                         method: 'POST',
                         body: formData
                     });
-                    console.log('伺服器回應狀態：', res.status);
                     
-                    const responseText = await res.text();
-                    console.log('伺服器回應內容：', responseText);
+                    console.log('儲存回應狀態：', saveResponse.status);
+                    
+                    const responseText = await saveResponse.text();
+                    console.log('儲存回應內容：', responseText);
                     
                     let result;
                     try {
