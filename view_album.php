@@ -26,7 +26,7 @@ if ($link instanceof mysqli) {
     }
 
     // 獲取相簿中的所有照片
-    $sql = "SELECT * FROM uploads WHERE album_id = ?";
+    $sql = "SELECT * FROM photos WHERE album_id = ?";
     $stmt = mysqli_prepare($link, $sql);
     mysqli_stmt_bind_param($stmt, "i", $albumId);
     mysqli_stmt_execute($stmt);
@@ -45,7 +45,7 @@ if ($link instanceof mysqli) {
     }
 
     // 獲取相簿中的所有照片
-    $sql = "SELECT * FROM uploads WHERE album_id = ?";
+    $sql = "SELECT * FROM photos WHERE album_id = ?";
     $stmt = $link->prepare($sql);
     $stmt->execute([$albumId]);
     $photos = $stmt->fetchAll('ASSOC');
