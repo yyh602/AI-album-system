@@ -9,11 +9,11 @@ $result = [
     'temp_dir' => sys_get_temp_dir(),
     'current_dir' => __DIR__,
     'possible_log_locations' => [
-        'D:\home\LogFiles\Application\',
-        'D:\home\LogFiles\http\RawLogs\',
-        'D:\home\site\wwwroot\logs\',
-        sys_get_temp_dir() . '\logs\',
-        __DIR__ . '\logs\'
+        'D:\\home\\LogFiles\\Application\\',
+        'D:\\home\\LogFiles\\http\\RawLogs\\',
+        'D:\\home\\site\\wwwroot\\logs\\',
+        sys_get_temp_dir() . '\\logs\\',
+        __DIR__ . '\\logs\\'
     ]
 ];
 
