@@ -216,10 +216,10 @@ require_once("DB_close.php");
              </a>
             <div class="photo-info">
               檔案: <?php echo htmlspecialchars(basename($photo['filename'])); ?><br>
+              時間: <?php echo htmlspecialchars($photo['datetime'] ?? '無時間資訊'); ?><br>
               <?php if ($photo['latitude'] && $photo['longitude']): ?>
-                GPS: <?php echo htmlspecialchars(number_format($photo['latitude'], 6)); ?>, <?php echo htmlspecialchars(number_format($photo['longitude'], 6)); ?><br>
+                GPS: <?php echo htmlspecialchars(number_format($photo['latitude'], 6)); ?>, <?php echo htmlspecialchars(number_format($photo['longitude'], 6)); ?>
               <?php endif; ?>
-              時間: <?php echo htmlspecialchars($photo['datetime'] ?? '無時間資訊'); ?>
             </div>
           </div>
         <?php endforeach; ?>

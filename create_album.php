@@ -10,7 +10,7 @@ $username = $_SESSION['username'] ?? 'guest';
 </head>
 <body>
     <h2>建立新相簿</h2>
-    <form action="save_album.php" method="post">
+    <form action="save_album_blob.php" method="post">
         <label>相簿名稱：
             <input type="text" name="album_name" required>
         </label>

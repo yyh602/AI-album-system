@@ -194,6 +194,23 @@ require_once("DB_close.php");
         <img src="<?php echo htmlspecialchars($photo['path']); ?>" class="photo-img" alt="photo">
     </div>
 
+    <!-- 拍攝資訊 -->
+    <div class="exif-info mb-4">
+        <h5>拍攝資訊</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>拍攝時間：</strong> <?php echo htmlspecialchars($photo['datetime'] ?? '無時間資訊'); ?></p>
+            </div>
+            <div class="col-md-6">
+                <?php if ($photo['latitude'] && $photo['longitude']): ?>
+                    <p><strong>GPS 座標：</strong> <?php echo htmlspecialchars(number_format($photo['latitude'], 6) . ', ' . number_format($photo['longitude'], 6)); ?></p>
+                <?php else: ?>
+                    <p><strong>GPS 座標：</strong> 無位置資訊</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <!-- 拍攝地點與地圖 / 或警告 -->
     <?php if ($photo['latitude'] && $photo['longitude']): ?>
         <div id="location-label">拍攝地點：<span id="location-text">載入中...</span></div>

@@ -3,100 +3,49 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-// EXIF 抓取函數
-function extractExifFromBlob($blobUrl) {
+// 引入 EXIF 處理器
+require_once 'exif_processor.php';
+
+// EXIF 抓取函數（使用新的處理器）
+function extractExifFromBlob($blobUrl, $fileName) {
     try {
-        // 下載圖片到臨時檔案
-        $tempFile = tempnam(sys_get_temp_dir(), 'exif_');
-        $imageContent = file_get_contents($blobUrl);
+        $processor = new ExifProcessor();
+        $result = $processor->processImage($blobUrl, $fileName);
         
-        if ($imageContent === false) {
-            throw new Exception('無法下載圖片');
-        }
-        
-        file_put_contents($tempFile, $imageContent);
-        
-        // 使用 ExifTool 抓取 EXIF 資料
-        $exiftoolPath = 'exiftool';
-        if (!file_exists($exiftoolPath)) {
-            $exiftoolPath = '/usr/bin/exiftool';
-        }
-        
-        if (!file_exists($exiftoolPath)) {
-            // 如果 ExifTool 不可用，使用 PHP EXIF 擴展
-            if (extension_loaded('exif')) {
-                $exifData = exif_read_data($tempFile, 'ANY_TAG', true);
-                unlink($tempFile);
-                
-                if ($exifData === false) {
-                    return ['datetime' => null, 'latitude' => null, 'longitude' => null];
-                }
-                
-                // 提取 EXIF 資料
-                $datetime = null;
-                if (isset($exifData['EXIF']['DateTimeOriginal'])) {
-                    $datetime = convertExifDate($exifData['EXIF']['DateTimeOriginal']);
-                } elseif (isset($exifData['EXIF']['CreateDate'])) {
-                    $datetime = convertExifDate($exifData['EXIF']['CreateDate']);
-                }
-                
-                $latitude = null;
-                $longitude = null;
-                if (isset($exifData['GPS']['GPSLatitude']) && isset($exifData['GPS']['GPSLongitude'])) {
-                    $latitude = convertGPSToDecimal($exifData['GPS']['GPSLatitude'], $exifData['GPS']['GPSLatitudeRef'] ?? 'N');
-                    $longitude = convertGPSToDecimal($exifData['GPS']['GPSLongitude'], $exifData['GPS']['GPSLongitudeRef'] ?? 'E');
-                }
-                
-                return [
-                    'datetime' => $datetime,
-                    'latitude' => $latitude,
-                    'longitude' => $longitude
-                ];
-            } else {
-                unlink($tempFile);
-                return ['datetime' => null, 'latitude' => null, 'longitude' => null];
-            }
-        }
-        
-        // 使用 ExifTool 命令列工具
-        $command = sprintf('%s -j -DateTimeOriginal -GPSLatitude -GPSLongitude "%s"', $exiftoolPath, $tempFile);
-        $output = shell_exec($command);
-        unlink($tempFile);
-        
-        if (!$output) {
-            return ['datetime' => null, 'latitude' => null, 'longitude' => null];
-        }
-        
-        $exifData = json_decode($output, true);
-        if (!$exifData || !isset($exifData[0])) {
-            return ['datetime' => null, 'latitude' => null, 'longitude' => null];
-        }
-        
-        $data = $exifData[0];
-        
-        // 處理日期時間
-        $datetime = null;
-        if (isset($data['DateTimeOriginal'])) {
-            $datetime = convertExifDate($data['DateTimeOriginal']);
-        }
-        
-        // 處理 GPS 座標
-        $latitude = null;
-        $longitude = null;
-        if (isset($data['GPSLatitude']) && isset($data['GPSLongitude'])) {
-            $latitude = convertGPS($data['GPSLatitude']);
-            $longitude = convertGPS($data['GPSLongitude']);
-        }
-        
+        // 返回相容的格式
         return [
-            'datetime' => $datetime,
-            'latitude' => $latitude,
-            'longitude' => $longitude
+            'datetime' => $result['datetime'] ?? date('Y-m-d H:i:s'),
+            'latitude' => $result['latitude'] ?? null,
+            'longitude' => $result['longitude'] ?? null,
+            'camera_make' => $result['camera_make'] ?? null,
+            'camera_model' => $result['camera_model'] ?? null,
+            'image_width' => $result['image_width'] ?? null,
+            'image_height' => $result['image_height'] ?? null,
+            'iso' => $result['iso'] ?? null,
+            'aperture' => $result['aperture'] ?? null,
+            'shutter_speed' => $result['shutter_speed'] ?? null,
+            'focal_length' => $result['focal_length'] ?? null,
+            'original_format' => $result['original_format'] ?? 'JPG',
+            'converted_jpg_url' => $result['converted_jpg_url'] ?? null
         ];
         
     } catch (Exception $e) {
         error_log("EXIF 抓取錯誤: " . $e->getMessage());
-        return ['datetime' => null, 'latitude' => null, 'longitude' => null];
+        return [
+            'datetime' => date('Y-m-d H:i:s'),
+            'latitude' => null,
+            'longitude' => null,
+            'camera_make' => null,
+            'camera_model' => null,
+            'image_width' => null,
+            'image_height' => null,
+            'iso' => null,
+            'aperture' => null,
+            'shutter_speed' => null,
+            'focal_length' => null,
+            'original_format' => 'JPG',
+            'converted_jpg_url' => null
+        ];
     }
 }
 
@@ -235,21 +184,30 @@ try {
             
             // 抓取 EXIF 資料
             error_log("開始處理檔案: $fileName, Blob URL: $blobUrl");
-            $exifData = extractExifFromBlob($blobUrl);
+            $exifData = extractExifFromBlob($blobUrl, $fileName);
             $datetime = $exifData['datetime'] ?? date('Y-m-d H:i:s');
             $latitude = $exifData['latitude'] ?? null;
             $longitude = $exifData['longitude'] ?? null;
+            
+            // 如果是 HEIC 檔案且已轉換，使用轉換後的 JPG URL
+            $displayUrl = $blobUrl;
+            if ($exifData['original_format'] === 'HEIC' && $exifData['converted_jpg_url']) {
+                $displayUrl = $exifData['converted_jpg_url'];
+                error_log("使用轉換後的 JPG URL: $displayUrl");
+            }
             
             // 記錄 EXIF 抓取結果
             error_log("EXIF 抓取結果 - 檔案: $fileName, 日期: $datetime, 緯度: $latitude, 經度: $longitude");
             error_log("完整 EXIF 資料: " . json_encode($exifData));
             
-            // 建立照片記錄（包含 EXIF 資料）
+            // 建立照片記錄（只包含時間和經緯度）
             $photo_sql = "INSERT INTO photos (album_id, filename, path, username, datetime, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
             $photo_stmt = mysqli_prepare($link, $photo_sql);
             
             if ($photo_stmt) {
-                mysqli_stmt_bind_param($photo_stmt, "issssdd", $album_id, $fileName, $blobUrl, $username, $datetime, $latitude, $longitude);
+                mysqli_stmt_bind_param($photo_stmt, "issssdd", 
+                    $album_id, $fileName, $displayUrl, $username, $datetime, $latitude, $longitude
+                );
                 $photo_result = mysqli_stmt_execute($photo_stmt);
                 mysqli_stmt_close($photo_stmt);
                 
