@@ -162,7 +162,8 @@ function extractExifFromBlob($blobUrl, $fileName) {
              if ($result['latitude'] !== null && $result['longitude'] !== null) {
                  if ($result['latitude'] < 21.5 || $result['latitude'] > 25.5 || 
                      $result['longitude'] < 119.5 || $result['longitude'] > 122.5) {
-                     error_log("警告：GPS 座標超出台灣地區範圍，可能轉換錯誤");
+                     error_log("警告：GPS 座標超出台灣地區範圍，但可能是正確的海外座標");
+                     // 不設為 null，保留原始座標
                  }
              }
          } else {
@@ -216,11 +217,33 @@ function convertGPSToDecimal($gpsArray, $ref) {
         return null;
     }
     
-    $degrees = floatval($gpsArray[0]);
-    $minutes = floatval($gpsArray[1]);
-    $seconds = floatval($gpsArray[2]);
+    // 安全地處理分數格式 (例如: "24/1", "8/1", "5014/100")
+    function safeFractionToFloat($fraction) {
+        if (is_numeric($fraction)) {
+            return floatval($fraction);
+        }
+        
+        if (is_string($fraction) && strpos($fraction, '/') !== false) {
+            $parts = explode('/', $fraction);
+            if (count($parts) === 2 && is_numeric($parts[0]) && is_numeric($parts[1]) && $parts[1] != 0) {
+                return floatval($parts[0]) / floatval($parts[1]);
+            }
+        }
+        
+        return floatval($fraction);
+    }
+    
+    $degrees = safeFractionToFloat($gpsArray[0]);
+    $minutes = safeFractionToFloat($gpsArray[1]);
+    $seconds = safeFractionToFloat($gpsArray[2]);
     
     $decimal = $degrees + ($minutes / 60) + ($seconds / 3600);
+    
+    // 驗證座標範圍
+    if ($decimal < -90 || $decimal > 90) {
+        error_log("GPS 座標超出有效範圍: $decimal");
+        return null;
+    }
     
     if ($ref === 'S' || $ref === 'W') {
         $decimal *= -1;
@@ -397,9 +420,24 @@ try {
                      if ($convertedJpgUrl) {
                          $displayUrl = $convertedJpgUrl;
                          error_log("使用轉換後的 JPG URL: $displayUrl");
+                     } else {
+                         error_log("JPG 上傳失敗，使用原始 HEIC URL");
+                         // 如果上傳失敗，使用原始 HEIC URL，但標記為需要轉換
+                         $displayUrl = $blobUrl . '&convert=heic';
                      }
                  }
              }
+            
+            // 驗證座標範圍
+            if ($latitude !== null && ($latitude < -90 || $latitude > 90)) {
+                error_log("緯度超出有效範圍: $latitude，設為 null");
+                $latitude = null;
+            }
+            
+            if ($longitude !== null && ($longitude < -180 || $longitude > 180)) {
+                error_log("經度超出有效範圍: $longitude，設為 null");
+                $longitude = null;
+            }
             
             // 記錄 EXIF 抓取結果
             error_log("EXIF 抓取結果 - 檔案: $fileName, 日期: $datetime, 緯度: $latitude, 經度: $longitude");

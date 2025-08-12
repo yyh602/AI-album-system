@@ -35,10 +35,12 @@ class AzureStorage {
         $extension = pathinfo($originalName, PATHINFO_EXTENSION);
         $blobName = uniqid() . '.' . $extension;
         
-        $url = $this->getBlobUrl($blobName);
-        $headers = $this->getAuthHeaders('PUT', $blobName);
-        
         $fileContent = file_get_contents($tempPath);
+        $contentLength = strlen($fileContent);
+        $contentType = 'image/jpeg'; // 因為我們轉換為 JPG
+        
+        $url = $this->getBlobUrl($blobName);
+        $headers = $this->getAuthHeaders('PUT', $blobName, $contentLength, $contentType);
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -63,10 +65,8 @@ class AzureStorage {
         return "https://{$this->accountName}.blob.core.windows.net/{$this->containerName}/{$blobName}";
     }
     
-    private function getAuthHeaders($method, $blobName) {
+    private function getAuthHeaders($method, $blobName, $contentLength = 0, $contentType = 'application/octet-stream') {
         $date = gmdate('D, d M Y H:i:s T');
-        $contentLength = 0;
-        $contentType = 'application/octet-stream';
         
         $canonicalizedHeaders = "x-ms-blob-type:BlockBlob\nx-ms-date:{$date}\nx-ms-version:2020-04-08\n";
         $canonicalizedResource = "/{$this->accountName}/{$this->containerName}/{$blobName}";
