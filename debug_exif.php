@@ -1,7 +1,9 @@
 <?php
+// 確保在輸出任何內容之前設定 header
 header('Content-Type: application/json');
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0); // 關閉錯誤顯示，避免 HTML 輸出
+ini_set('log_errors', 1); // 開啟錯誤日誌
 
 // 測試 EXIF 抓取功能
 function testExifExtraction($blobUrl, $fileName) {
