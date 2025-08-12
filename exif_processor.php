@@ -127,7 +127,7 @@ class ExifProcessor {
         ]);
         
         // 直接從 URL 讀取 EXIF 資料
-        $exifData = exif_read_data($url, 'ANY_TAG', true, false, false, false, false, false, $context);
+        $exifData = exif_read_data($url, 'ANY_TAG', true);
         
         if ($exifData === false) {
             error_log("無法從 URL 讀取 EXIF 資料");

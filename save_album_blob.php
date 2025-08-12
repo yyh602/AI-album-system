@@ -19,7 +19,7 @@ function extractExifFromBlob($blobUrl, $fileName) {
             ]
         ]);
         
-        $exifData = exif_read_data($blobUrl, 'ANY_TAG', true, false, false, false, false, false, $context);
+        $exifData = exif_read_data($blobUrl, 'ANY_TAG', true);
         
         if ($exifData === false) {
             error_log("無法從 URL 讀取 EXIF 資料: $blobUrl");
