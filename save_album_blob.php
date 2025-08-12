@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-// 改進的 EXIF 抓取函數
+// 改進的 EXIF 抓取函數（支援 HEIC）
 function extractExifFromBlob($blobUrl, $fileName) {
     try {
         // 檢查必要的擴展
@@ -11,18 +11,19 @@ function extractExifFromBlob($blobUrl, $fileName) {
             throw new Exception('PHP EXIF 擴展未載入');
         }
         
+        if (!extension_loaded('imagick')) {
+            throw new Exception('PHP Imagick 擴展未載入（需要處理 HEIC 檔案）');
+        }
+        
         error_log("開始抓取 EXIF: $fileName, URL: $blobUrl");
         
-        // 嘗試直接從 URL 讀取 EXIF 資料
-        $exifData = exif_read_data($blobUrl, 'ANY_TAG', true);
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         
-        if ($exifData === false) {
-            error_log("無法直接從 URL 讀取 EXIF，嘗試下載檔案");
+        // 如果是 HEIC 檔案，先轉換為 JPG
+        if ($fileExtension === 'heic' || $fileExtension === 'heif') {
+            error_log("檢測到 HEIC 檔案，開始轉換");
             
-            // 下載檔案到臨時位置再讀取
-            $tempFile = tempnam(sys_get_temp_dir(), 'exif_temp_');
-            $tempFile .= '.jpg';
-            
+            // 下載 HEIC 檔案
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 30,
@@ -31,17 +32,88 @@ function extractExifFromBlob($blobUrl, $fileName) {
             ]);
             
             $fileContent = file_get_contents($blobUrl, false, $context);
-            if ($fileContent !== false) {
-                file_put_contents($tempFile, $fileContent);
-                error_log("檔案已下載到臨時位置: $tempFile");
+            if ($fileContent === false) {
+                error_log("無法下載 HEIC 檔案");
+                return [
+                    'datetime' => date('Y-m-d H:i:s'),
+                    'latitude' => null,
+                    'longitude' => null,
+                    'original_format' => 'HEIC'
+                ];
+            }
+            
+            // 建立臨時 HEIC 檔案
+            $heicTempFile = tempnam(sys_get_temp_dir(), 'heic_');
+            $heicTempFile .= '.heic';
+            file_put_contents($heicTempFile, $fileContent);
+            
+            // 使用 Imagick 轉換為 JPG
+            $imagick = new Imagick($heicTempFile);
+            $imagick->setImageFormat('jpg');
+            
+            // 建立臨時 JPG 檔案
+            $jpgTempFile = tempnam(sys_get_temp_dir(), 'jpg_');
+            $jpgTempFile .= '.jpg';
+            $imagick->writeImage($jpgTempFile);
+            $imagick->destroy();
+            
+            // 從轉換後的 JPG 讀取 EXIF
+            $exifData = exif_read_data($jpgTempFile, 'ANY_TAG', true);
+            
+            // 清理臨時檔案
+            unlink($heicTempFile);
+            unlink($jpgTempFile);
+            
+            if ($exifData === false) {
+                error_log("從轉換後的 JPG 也無法讀取 EXIF");
+                return [
+                    'datetime' => date('Y-m-d H:i:s'),
+                    'latitude' => null,
+                    'longitude' => null,
+                    'original_format' => 'HEIC'
+                ];
+            }
+            
+            error_log("HEIC 轉換成功，EXIF 讀取成功");
+        } else {
+            // 對於 JPG 檔案，直接嘗試讀取
+            $exifData = exif_read_data($blobUrl, 'ANY_TAG', true);
+            
+            if ($exifData === false) {
+                error_log("無法直接從 URL 讀取 EXIF，嘗試下載檔案");
                 
-                $exifData = exif_read_data($tempFile, 'ANY_TAG', true);
+                // 下載檔案到臨時位置再讀取
+                $tempFile = tempnam(sys_get_temp_dir(), 'exif_temp_');
+                $tempFile .= '.jpg';
                 
-                // 清理臨時檔案
-                unlink($tempFile);
+                $context = stream_context_create([
+                    'http' => [
+                        'timeout' => 30,
+                        'user_agent' => 'Mozilla/5.0 (compatible; AI-Album-System/1.0)'
+                    ]
+                ]);
                 
-                if ($exifData === false) {
-                    error_log("從臨時檔案也無法讀取 EXIF 資料");
+                $fileContent = file_get_contents($blobUrl, false, $context);
+                if ($fileContent !== false) {
+                    file_put_contents($tempFile, $fileContent);
+                    error_log("檔案已下載到臨時位置: $tempFile");
+                    
+                    $exifData = exif_read_data($tempFile, 'ANY_TAG', true);
+                    
+                    // 清理臨時檔案
+                    unlink($tempFile);
+                    
+                    if ($exifData === false) {
+                        error_log("從臨時檔案也無法讀取 EXIF 資料");
+                        return [
+                            'datetime' => date('Y-m-d H:i:s'),
+                            'latitude' => null,
+                            'longitude' => null,
+                            'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
+                        ];
+                    }
+                } else {
+                    error_log("無法下載檔案內容");
                     return [
                         'datetime' => date('Y-m-d H:i:s'),
                         'latitude' => null,
@@ -49,14 +121,6 @@ function extractExifFromBlob($blobUrl, $fileName) {
                         'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
                     ];
                 }
-            } else {
-                error_log("無法下載檔案內容");
-                return [
-                    'datetime' => date('Y-m-d H:i:s'),
-                    'latitude' => null,
-                    'longitude' => null,
-                    'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
-                ];
             }
         }
         
