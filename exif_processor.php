@@ -250,23 +250,25 @@ class ExifProcessor {
     }
 }
 
-// 測試
-if (isset($_POST['blobUrl']) && isset($_POST['fileName'])) {
-    try {
-        $processor = new ExifProcessor();
-        $result = $processor->processImage($_POST['blobUrl'], $_POST['fileName']);
-        echo json_encode($result);
-    } catch (Exception $e) {
+// 只有在直接訪問此檔案時才執行測試
+if (basename($_SERVER['SCRIPT_NAME']) === 'exif_processor.php') {
+    if (isset($_POST['blobUrl']) && isset($_POST['fileName'])) {
+        try {
+            $processor = new ExifProcessor();
+            $result = $processor->processImage($_POST['blobUrl'], $_POST['fileName']);
+            echo json_encode($result);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    } else {
         echo json_encode([
             'success' => false,
-            'error' => $e->getMessage()
+            'message' => '請提供 blobUrl 和 fileName 參數',
+            'usage' => 'POST blobUrl=圖片URL&fileName=檔案名稱'
         ]);
     }
-} else {
-    echo json_encode([
-        'success' => false,
-        'message' => '請提供 blobUrl 和 fileName 參數',
-        'usage' => 'POST blobUrl=圖片URL&fileName=檔案名稱'
-    ]);
 }
 ?>

@@ -3,31 +3,64 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-// 引入 EXIF 處理器
-require_once 'exif_processor.php';
-
-// EXIF 抓取函數（使用新的處理器）
+// 簡化的 EXIF 抓取函數
 function extractExifFromBlob($blobUrl, $fileName) {
     try {
-        $processor = new ExifProcessor();
-        $result = $processor->processImage($blobUrl, $fileName);
+        // 檢查必要的擴展
+        if (!extension_loaded('exif')) {
+            throw new Exception('PHP EXIF 擴展未載入');
+        }
         
-        // 返回相容的格式
-        return [
-            'datetime' => $result['datetime'] ?? date('Y-m-d H:i:s'),
-            'latitude' => $result['latitude'] ?? null,
-            'longitude' => $result['longitude'] ?? null,
-            'camera_make' => $result['camera_make'] ?? null,
-            'camera_model' => $result['camera_model'] ?? null,
-            'image_width' => $result['image_width'] ?? null,
-            'image_height' => $result['image_height'] ?? null,
-            'iso' => $result['iso'] ?? null,
-            'aperture' => $result['aperture'] ?? null,
-            'shutter_speed' => $result['shutter_speed'] ?? null,
-            'focal_length' => $result['focal_length'] ?? null,
-            'original_format' => $result['original_format'] ?? 'JPG',
-            'converted_jpg_url' => $result['converted_jpg_url'] ?? null
+        // 直接從 URL 讀取 EXIF 資料
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 30,
+                'user_agent' => 'Mozilla/5.0 (compatible; AI-Album-System/1.0)'
+            ]
+        ]);
+        
+        $exifData = exif_read_data($blobUrl, 'ANY_TAG', true, false, false, false, false, false, $context);
+        
+        if ($exifData === false) {
+            error_log("無法從 URL 讀取 EXIF 資料: $blobUrl");
+            return [
+                'datetime' => date('Y-m-d H:i:s'),
+                'latitude' => null,
+                'longitude' => null,
+                'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
+            ];
+        }
+        
+        // 解析 EXIF 資料
+        $result = [
+            'datetime' => null,
+            'latitude' => null,
+            'longitude' => null,
+            'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
         ];
+        
+        // 日期時間
+        if (isset($exifData['EXIF']['DateTimeOriginal'])) {
+            $result['datetime'] = convertExifDate($exifData['EXIF']['DateTimeOriginal']);
+        } elseif (isset($exifData['EXIF']['CreateDate'])) {
+            $result['datetime'] = convertExifDate($exifData['EXIF']['CreateDate']);
+        } elseif (isset($exifData['IFD0']['DateTime'])) {
+            $result['datetime'] = convertExifDate($exifData['IFD0']['DateTime']);
+        }
+        
+        // GPS 座標
+        if (isset($exifData['GPS']['GPSLatitude']) && isset($exifData['GPS']['GPSLongitude'])) {
+            $result['latitude'] = convertGPSToDecimal($exifData['GPS']['GPSLatitude'], $exifData['GPS']['GPSLatitudeRef'] ?? 'N');
+            $result['longitude'] = convertGPSToDecimal($exifData['GPS']['GPSLongitude'], $exifData['GPS']['GPSLongitudeRef'] ?? 'E');
+        }
+        
+        // 如果沒有日期時間，使用當前時間
+        if (!$result['datetime']) {
+            $result['datetime'] = date('Y-m-d H:i:s');
+        }
+        
+        error_log("EXIF 抓取成功: " . json_encode($result));
+        return $result;
         
     } catch (Exception $e) {
         error_log("EXIF 抓取錯誤: " . $e->getMessage());
@@ -35,16 +68,7 @@ function extractExifFromBlob($blobUrl, $fileName) {
             'datetime' => date('Y-m-d H:i:s'),
             'latitude' => null,
             'longitude' => null,
-            'camera_make' => null,
-            'camera_model' => null,
-            'image_width' => null,
-            'image_height' => null,
-            'iso' => null,
-            'aperture' => null,
-            'shutter_speed' => null,
-            'focal_length' => null,
-            'original_format' => 'JPG',
-            'converted_jpg_url' => null
+            'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
         ];
     }
 }
