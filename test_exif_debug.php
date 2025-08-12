@@ -139,7 +139,7 @@
                 formData.append('blobUrl', blobUrl);
                 formData.append('fileName', fileName);
                 
-                const response = await fetch('debug_step1.php', {
+                const response = await fetch('debug_step2.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -150,9 +150,18 @@
                 resultDiv.style.display = 'block';
                 
                 // 顯示結果
-                resultDiv.className = 'result success';
-                resultDiv.textContent = '✅ 基本測試成功！\n\n' + 
-                    '🔧 詳細資訊:\n' + JSON.stringify(result, null, 2);
+                if (result.status === 'success') {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ EXIF 讀取成功！\n\n' + 
+                        '📅 直接讀取: ' + (result.direct_read_result || 'N/A') + '\n' +
+                        '📅 臨時檔案: ' + (result.temp_file_result || 'N/A') + '\n\n' +
+                        '🔧 詳細資訊:\n' + JSON.stringify(result, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ EXIF 讀取失敗\n\n' +
+                        '錯誤訊息:\n' + JSON.stringify(result.errors, null, 2) + '\n\n' +
+                        '完整回應:\n' + JSON.stringify(result, null, 2);
+                }
                 
             } catch (error) {
                 resultDiv.className = 'result error';
