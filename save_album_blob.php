@@ -146,14 +146,26 @@ function extractExifFromBlob($blobUrl, $fileName) {
             error_log("找到 IFD0 DateTime: " . $exifData['IFD0']['DateTime']);
         }
         
-        // GPS 座標
-        if (isset($exifData['GPS']['GPSLatitude']) && isset($exifData['GPS']['GPSLongitude'])) {
-            $result['latitude'] = convertGPSToDecimal($exifData['GPS']['GPSLatitude'], $exifData['GPS']['GPSLatitudeRef'] ?? 'N');
-            $result['longitude'] = convertGPSToDecimal($exifData['GPS']['GPSLongitude'], $exifData['GPS']['GPSLongitudeRef'] ?? 'E');
-            error_log("找到 GPS 座標: 緯度=" . $result['latitude'] . ", 經度=" . $result['longitude']);
-        } else {
-            error_log("未找到 GPS 座標資料");
-        }
+                 // GPS 座標
+         if (isset($exifData['GPS']['GPSLatitude']) && isset($exifData['GPS']['GPSLongitude'])) {
+             error_log("原始 GPS 資料 - 緯度: " . json_encode($exifData['GPS']['GPSLatitude']) . ", 緯度參考: " . ($exifData['GPS']['GPSLatitudeRef'] ?? 'N'));
+             error_log("原始 GPS 資料 - 經度: " . json_encode($exifData['GPS']['GPSLongitude']) . ", 經度參考: " . ($exifData['GPS']['GPSLongitudeRef'] ?? 'E'));
+             
+             $result['latitude'] = convertGPSToDecimal($exifData['GPS']['GPSLatitude'], $exifData['GPS']['GPSLatitudeRef'] ?? 'N');
+             $result['longitude'] = convertGPSToDecimal($exifData['GPS']['GPSLongitude'], $exifData['GPS']['GPSLongitudeRef'] ?? 'E');
+             
+             error_log("轉換後 GPS 座標: 緯度=" . $result['latitude'] . ", 經度=" . $result['longitude']);
+             
+             // 驗證座標合理性（台灣地區大致範圍）
+             if ($result['latitude'] !== null && $result['longitude'] !== null) {
+                 if ($result['latitude'] < 21.5 || $result['latitude'] > 25.5 || 
+                     $result['longitude'] < 119.5 || $result['longitude'] > 122.5) {
+                     error_log("警告：GPS 座標超出台灣地區範圍，可能轉換錯誤");
+                 }
+             }
+         } else {
+             error_log("未找到 GPS 座標資料");
+         }
         
         // 如果沒有日期時間，使用當前時間
         if (!$result['datetime']) {
@@ -213,6 +225,34 @@ function convertGPSToDecimal($gpsArray, $ref) {
     }
     
     return $decimal;
+}
+
+// 上傳轉換後的 JPG 到 Azure Storage
+function uploadConvertedJpg($tempJpgFile, $originalFileName) {
+    try {
+        // 使用現有的 Azure Storage 類別
+        require_once 'azure_storage.php';
+        
+        $azureStorage = new AzureStorage();
+        
+        // 生成新的檔案名（將 .heic 改為 .jpg）
+        $fileName = pathinfo($originalFileName, PATHINFO_FILENAME) . '.jpg';
+        
+        // 上傳檔案
+        $convertedUrl = $azureStorage->uploadFromTemp($tempJpgFile, $fileName);
+        
+        if ($convertedUrl) {
+            error_log("JPG 上傳成功: $convertedUrl");
+            return $convertedUrl;
+        } else {
+            error_log("JPG 上傳失敗");
+            return null;
+        }
+        
+    } catch (Exception $e) {
+        error_log("上傳轉換後的 JPG 錯誤: " . $e->getMessage());
+        return null;
+    }
 }
 
 try {
@@ -315,12 +355,49 @@ try {
             $latitude = $exifData['latitude'] ?? null;
             $longitude = $exifData['longitude'] ?? null;
             
-            // 如果是 HEIC 檔案且已轉換，使用轉換後的 JPG URL
-            $displayUrl = $blobUrl;
-            if ($exifData['original_format'] === 'HEIC' && $exifData['converted_jpg_url']) {
-                $displayUrl = $exifData['converted_jpg_url'];
-                error_log("使用轉換後的 JPG URL: $displayUrl");
-            }
+                         // 如果是 HEIC 檔案，需要轉換為 JPG 並上傳到 Azure Storage
+             $displayUrl = $blobUrl;
+             if ($exifData['original_format'] === 'HEIC') {
+                 error_log("HEIC 檔案需要轉換為 JPG 並上傳");
+                 
+                 // 下載 HEIC 檔案
+                 $context = stream_context_create([
+                     'http' => [
+                         'timeout' => 30,
+                         'user_agent' => 'Mozilla/5.0 (compatible; AI-Album-System/1.0)'
+                     ]
+                 ]);
+                 
+                 $fileContent = file_get_contents($blobUrl, false, $context);
+                 if ($fileContent !== false) {
+                     // 建立臨時 HEIC 檔案
+                     $heicTempFile = tempnam(sys_get_temp_dir(), 'heic_');
+                     $heicTempFile .= '.heic';
+                     file_put_contents($heicTempFile, $fileContent);
+                     
+                     // 使用 Imagick 轉換為 JPG
+                     $imagick = new Imagick($heicTempFile);
+                     $imagick->setImageFormat('jpg');
+                     
+                     // 建立臨時 JPG 檔案
+                     $jpgTempFile = tempnam(sys_get_temp_dir(), 'jpg_');
+                     $jpgTempFile .= '.jpg';
+                     $imagick->writeImage($jpgTempFile);
+                     $imagick->destroy();
+                     
+                     // 上傳轉換後的 JPG 到 Azure Storage
+                     $convertedJpgUrl = uploadConvertedJpg($jpgTempFile, $fileName);
+                     
+                     // 清理臨時檔案
+                     unlink($heicTempFile);
+                     unlink($jpgTempFile);
+                     
+                     if ($convertedJpgUrl) {
+                         $displayUrl = $convertedJpgUrl;
+                         error_log("使用轉換後的 JPG URL: $displayUrl");
+                     }
+                 }
+             }
             
             // 記錄 EXIF 抓取結果
             error_log("EXIF 抓取結果 - 檔案: $fileName, 日期: $datetime, 緯度: $latitude, 經度: $longitude");
