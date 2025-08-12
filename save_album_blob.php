@@ -2,6 +2,8 @@
 header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', '/tmp/php_errors.log');
 
 // 改進的 EXIF 抓取函數（支援 HEIC）
 function extractExifFromBlob($blobUrl, $fileName) {
