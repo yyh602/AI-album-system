@@ -139,7 +139,7 @@
                 formData.append('blobUrl', blobUrl);
                 formData.append('fileName', fileName);
                 
-                const response = await fetch('simple_exif_test.php', {
+                const response = await fetch('debug_step1.php', {
                     method: 'POST',
                     body: formData
                 });
