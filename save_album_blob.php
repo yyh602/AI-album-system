@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-// 簡化的 EXIF 抓取函數
+// 改進的 EXIF 抓取函數
 function extractExifFromBlob($blobUrl, $fileName) {
     try {
         // 檢查必要的擴展
@@ -11,25 +11,56 @@ function extractExifFromBlob($blobUrl, $fileName) {
             throw new Exception('PHP EXIF 擴展未載入');
         }
         
-        // 直接從 URL 讀取 EXIF 資料
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 30,
-                'user_agent' => 'Mozilla/5.0 (compatible; AI-Album-System/1.0)'
-            ]
-        ]);
+        error_log("開始抓取 EXIF: $fileName, URL: $blobUrl");
         
+        // 嘗試直接從 URL 讀取 EXIF 資料
         $exifData = exif_read_data($blobUrl, 'ANY_TAG', true);
         
         if ($exifData === false) {
-            error_log("無法從 URL 讀取 EXIF 資料: $blobUrl");
-            return [
-                'datetime' => date('Y-m-d H:i:s'),
-                'latitude' => null,
-                'longitude' => null,
-                'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
-            ];
+            error_log("無法直接從 URL 讀取 EXIF，嘗試下載檔案");
+            
+            // 下載檔案到臨時位置再讀取
+            $tempFile = tempnam(sys_get_temp_dir(), 'exif_temp_');
+            $tempFile .= '.jpg';
+            
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 30,
+                    'user_agent' => 'Mozilla/5.0 (compatible; AI-Album-System/1.0)'
+                ]
+            ]);
+            
+            $fileContent = file_get_contents($blobUrl, false, $context);
+            if ($fileContent !== false) {
+                file_put_contents($tempFile, $fileContent);
+                error_log("檔案已下載到臨時位置: $tempFile");
+                
+                $exifData = exif_read_data($tempFile, 'ANY_TAG', true);
+                
+                // 清理臨時檔案
+                unlink($tempFile);
+                
+                if ($exifData === false) {
+                    error_log("從臨時檔案也無法讀取 EXIF 資料");
+                    return [
+                        'datetime' => date('Y-m-d H:i:s'),
+                        'latitude' => null,
+                        'longitude' => null,
+                        'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
+                    ];
+                }
+            } else {
+                error_log("無法下載檔案內容");
+                return [
+                    'datetime' => date('Y-m-d H:i:s'),
+                    'latitude' => null,
+                    'longitude' => null,
+                    'original_format' => strtoupper(pathinfo($fileName, PATHINFO_EXTENSION)) ?: 'JPG'
+                ];
+            }
         }
+        
+        error_log("EXIF 資料讀取成功，開始解析");
         
         // 解析 EXIF 資料
         $result = [
@@ -42,24 +73,31 @@ function extractExifFromBlob($blobUrl, $fileName) {
         // 日期時間
         if (isset($exifData['EXIF']['DateTimeOriginal'])) {
             $result['datetime'] = convertExifDate($exifData['EXIF']['DateTimeOriginal']);
+            error_log("找到 DateTimeOriginal: " . $exifData['EXIF']['DateTimeOriginal']);
         } elseif (isset($exifData['EXIF']['CreateDate'])) {
             $result['datetime'] = convertExifDate($exifData['EXIF']['CreateDate']);
+            error_log("找到 CreateDate: " . $exifData['EXIF']['CreateDate']);
         } elseif (isset($exifData['IFD0']['DateTime'])) {
             $result['datetime'] = convertExifDate($exifData['IFD0']['DateTime']);
+            error_log("找到 IFD0 DateTime: " . $exifData['IFD0']['DateTime']);
         }
         
         // GPS 座標
         if (isset($exifData['GPS']['GPSLatitude']) && isset($exifData['GPS']['GPSLongitude'])) {
             $result['latitude'] = convertGPSToDecimal($exifData['GPS']['GPSLatitude'], $exifData['GPS']['GPSLatitudeRef'] ?? 'N');
             $result['longitude'] = convertGPSToDecimal($exifData['GPS']['GPSLongitude'], $exifData['GPS']['GPSLongitudeRef'] ?? 'E');
+            error_log("找到 GPS 座標: 緯度=" . $result['latitude'] . ", 經度=" . $result['longitude']);
+        } else {
+            error_log("未找到 GPS 座標資料");
         }
         
         // 如果沒有日期時間，使用當前時間
         if (!$result['datetime']) {
             $result['datetime'] = date('Y-m-d H:i:s');
+            error_log("使用當前時間作為預設值");
         }
         
-        error_log("EXIF 抓取成功: " . json_encode($result));
+        error_log("EXIF 抓取完成: " . json_encode($result));
         return $result;
         
     } catch (Exception $e) {
