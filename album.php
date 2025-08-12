@@ -521,7 +521,7 @@ require_once("DB_close.php");
                     blobUrls.forEach(url => formData.append('blobUrls[]', url));
                     fileNames.forEach(name => formData.append('fileNames[]', name));
                     
-                    const saveResponse = await fetch('./save_album_blob.php', {
+                    const saveResponse = await fetch('save_album_final_fix.php', {
                         method: 'POST',
                         body: formData
                     });
