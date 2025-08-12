@@ -218,7 +218,7 @@ require_once("DB_close.php");
                     <div class="modal-body">
                         <div id="uploadStep">
                             <label class="form-label">請選擇要加入相簿的照片</label>
-                            <input type="file" id="albumPhotoInput" accept="image/*" multiple style="display:none;">
+                            <input type="file" id="albumPhotoInput" accept="image/*,.heic,.heif" multiple style="display:none;">
                             <div class="upload-grid" id="albumPhotoGrid">
                                 <div class="upload-add-box" id="uploadAddBox">＋</div>
                             </div>
@@ -521,7 +521,7 @@ require_once("DB_close.php");
                     blobUrls.forEach(url => formData.append('blobUrls[]', url));
                     fileNames.forEach(name => formData.append('fileNames[]', name));
                     
-                    const saveResponse = await fetch('save_album_blob.php', {
+                    const saveResponse = await fetch('test_save_album.php', {
                         method: 'POST',
                         body: formData
                     });
