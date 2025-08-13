@@ -628,42 +628,52 @@ require_once("DB_close.php");
       });
   }
   
-  // 載入所有照片並顯示卡片
-  function loadAllPhotos() {
-    fetch('get_all_photos.php')
-      .then(res => res.json())
-      .then(data => {
-        const list = document.getElementById('allPhotosList');
-        list.innerHTML = '';
-        selectedPhotos = [];
-        if (data.status === 'success' && data.photos) {
-          data.photos.forEach(photo => {
-            const card = document.createElement('div');
-            card.className = 'photo-card-select'; // 不預設選中，讓使用者手動選擇
-            card.innerHTML = `
-              <img src="${photo.path || photo.filename}" alt="photo" onerror="this.src='img/default_album_cover.svg'">
-            `;
-                         // 將照片的完整資訊存儲在 data 屬性中
+     // 載入所有照片並顯示卡片
+   function loadAllPhotos() {
+     fetch('get_all_photos.php')
+       .then(res => res.json())
+       .then(data => {
+         const list = document.getElementById('allPhotosList');
+         list.innerHTML = '';
+         selectedPhotos = [];
+         if (data.status === 'success' && data.photos) {
+           // 使用 Set 來去重，以照片路徑作為唯一識別
+           const uniquePhotos = new Map();
+           data.photos.forEach(photo => {
+             const photoPath = photo.path || photo.filename;
+             if (!uniquePhotos.has(photoPath)) {
+               uniquePhotos.set(photoPath, photo);
+             }
+           });
+           
+           // 顯示去重後的照片
+           uniquePhotos.forEach(photo => {
+             const card = document.createElement('div');
+             card.className = 'photo-card-select'; // 不預設選中，讓使用者手動選擇
+             card.innerHTML = `
+               <img src="${photo.path || photo.filename}" alt="photo" onerror="this.src='img/default_album_cover.svg'">
+             `;
+             // 將照片的完整資訊存儲在 data 屬性中
              card.dataset.photoInfo = JSON.stringify({
                album_name: photo.album_name || '未知相簿',
                datetime: photo.datetime,
                latitude: photo.latitude,
                longitude: photo.longitude
              });
-            card.onclick = function() {
-              card.classList.toggle('selected');
-              updateSelectedPhotos();
-            };
-            list.appendChild(card);
-          });
-          // 更新照片預覽和計數
-          updateSelectedPhotos();
-          document.getElementById('photoCount').textContent = '0';
-        } else {
-          list.innerHTML = '<div class="text-muted">無照片可選</div>';
-        }
-      });
-  }
+             card.onclick = function() {
+               card.classList.toggle('selected');
+               updateSelectedPhotos();
+             };
+             list.appendChild(card);
+           });
+           // 更新照片預覽和計數
+           updateSelectedPhotos();
+           document.getElementById('photoCount').textContent = '0';
+         } else {
+           list.innerHTML = '<div class="text-muted">無照片可選</div>';
+         }
+       });
+   }
   
   // 更新選中的照片
   function updateSelectedPhotos() {
