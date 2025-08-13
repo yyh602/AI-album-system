@@ -351,10 +351,7 @@ require_once("DB_close.php");
                <button type="button" class="btn btn-outline-primary" id="selectAlbumBtn">選擇相簿</button>
                <button type="button" class="btn btn-outline-success" id="selectPhotosBtn">選擇照片</button>
              </div>
-            <div class="text-muted small mb-2">
-              <i class="fas fa-info-circle"></i> 
-              <span id="selectionHint">選擇相簿：選擇整個相簿的所有照片</span>
-            </div>
+            
             <div id="albumCardList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;"></div>
             <div id="allPhotosList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;">
               <div class="w-100 mb-2">
@@ -570,19 +567,16 @@ require_once("DB_close.php");
   };
   
   function updateButtonStyles() {
-    const selectionHint = document.getElementById('selectionHint');
     if (currentSelectionMode === 'album') {
       selectAlbumBtn.classList.remove('btn-outline-primary');
       selectAlbumBtn.classList.add('btn-primary');
       selectPhotosBtn.classList.remove('btn-success');
       selectPhotosBtn.classList.add('btn-outline-success');
-      selectionHint.textContent = '選擇相簿：選擇整個相簿的所有照片';
     } else {
       selectPhotosBtn.classList.remove('btn-outline-success');
       selectPhotosBtn.classList.add('btn-success');
       selectAlbumBtn.classList.remove('btn-primary');
       selectAlbumBtn.classList.add('btn-outline-primary');
-      selectionHint.textContent = '選擇照片：從所有相簿中選擇多張照片';
     }
   }
   
