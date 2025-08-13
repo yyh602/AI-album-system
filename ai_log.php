@@ -351,12 +351,21 @@ require_once("DB_close.php");
               <button type="button" class="btn btn-outline-primary" id="selectAlbumBtn">選擇相簿</button>
               <button type="button" class="btn btn-outline-success" id="selectPhotosBtn">選擇照片</button>
             </div>
+            <div class="text-muted small mb-2">
+              <i class="fas fa-info-circle"></i> 
+              <span id="selectionHint">選擇相簿：選擇整個相簿的所有照片</span>
+            </div>
             <div id="albumCardList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;"></div>
-            <div id="allPhotosList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;"></div>
+            <div id="allPhotosList" style="display:none;flex-wrap:wrap;gap:12px;max-height:260px;overflow-y:auto;">
+              <div class="w-100 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary me-2" id="selectAllPhotosBtn">全選</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearAllPhotosBtn">清除</button>
+              </div>
+            </div>
           </div>
           <div class="mb-3" id="photoPreviewWrap" style="display:none;">
-            <label class="form-label">選擇的照片預覽</label>
-            <div id="photoPreview" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            <label class="form-label">選擇的照片預覽 (<span id="photoCount">0</span> 張)</label>
+            <div id="photoPreview" style="display:flex;flex-wrap:wrap;gap:8px;max-height:200px;overflow-y:auto;border:1px solid #ddd;padding:10px;border-radius:8px;background:#f8f9fa;"></div>
           </div>
           <div class="mb-3">
             <label for="logLength" class="form-label">日誌字數</label>
@@ -489,12 +498,16 @@ require_once("DB_close.php");
       margin-bottom: 6px;
       background: #f0f0f0;
     }
-    .photo-card-select .photo-info {
-      font-size: 0.8rem;
-      color: #666;
-      text-align: center;
-      word-break: break-all;
-    }
+         .photo-card-select .photo-info {
+       font-size: 0.75rem;
+       color: #666;
+       text-align: center;
+       word-break: break-all;
+       background: #f8f9fa;
+       padding: 2px 4px;
+       border-radius: 4px;
+       margin-top: 2px;
+     }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -508,10 +521,28 @@ require_once("DB_close.php");
   const createLogModal = new bootstrap.Modal(document.getElementById('createLogModal'));
   const selectAlbumBtn = document.getElementById('selectAlbumBtn');
   const selectPhotosBtn = document.getElementById('selectPhotosBtn');
+  const selectAllPhotosBtn = document.getElementById('selectAllPhotosBtn');
+  const clearAllPhotosBtn = document.getElementById('clearAllPhotosBtn');
   
   createLogBtn.onclick = () => {
     resetModal();
     createLogModal.show();
+  };
+  
+  // 全選照片按鈕
+  selectAllPhotosBtn.onclick = () => {
+    document.querySelectorAll('.photo-card-select').forEach(card => {
+      card.classList.add('selected');
+    });
+    updateSelectedPhotos();
+  };
+  
+  // 清除所有選擇按鈕
+  clearAllPhotosBtn.onclick = () => {
+    document.querySelectorAll('.photo-card-select').forEach(card => {
+      card.classList.remove('selected');
+    });
+    updateSelectedPhotos();
   };
   
   // 選擇相簿按鈕
@@ -529,22 +560,25 @@ require_once("DB_close.php");
     currentSelectionMode = 'photos';
     document.getElementById('albumCardList').style.display = 'none';
     document.getElementById('allPhotosList').style.display = 'flex';
-    document.getElementById('photoPreviewWrap').style.display = 'none';
+    document.getElementById('photoPreviewWrap').style.display = 'none'; // 先不顯示照片預覽
     loadAllPhotos();
     updateButtonStyles();
   };
   
   function updateButtonStyles() {
+    const selectionHint = document.getElementById('selectionHint');
     if (currentSelectionMode === 'album') {
       selectAlbumBtn.classList.remove('btn-outline-primary');
       selectAlbumBtn.classList.add('btn-primary');
       selectPhotosBtn.classList.remove('btn-success');
       selectPhotosBtn.classList.add('btn-outline-success');
+      selectionHint.textContent = '選擇相簿：選擇整個相簿的所有照片';
     } else {
       selectPhotosBtn.classList.remove('btn-outline-success');
       selectPhotosBtn.classList.add('btn-success');
       selectAlbumBtn.classList.remove('btn-primary');
       selectAlbumBtn.classList.add('btn-outline-primary');
+      selectionHint.textContent = '選擇照片：從所有相簿中選擇多張照片';
     }
   }
   
@@ -606,17 +640,26 @@ require_once("DB_close.php");
         if (data.status === 'success' && data.photos) {
           data.photos.forEach(photo => {
             const card = document.createElement('div');
-            card.className = 'photo-card-select';
+            card.className = 'photo-card-select'; // 不預設選中，讓使用者手動選擇
             card.innerHTML = `
               <img src="${photo.path || photo.filename}" alt="photo" onerror="this.src='img/default_album_cover.svg'">
               <div class="photo-info">${photo.album_name || '未知相簿'}</div>
             `;
+            // 將照片的完整資訊存儲在 data 屬性中
+            card.dataset.photoInfo = JSON.stringify({
+              datetime: photo.datetime,
+              latitude: photo.latitude,
+              longitude: photo.longitude
+            });
             card.onclick = function() {
               card.classList.toggle('selected');
               updateSelectedPhotos();
             };
             list.appendChild(card);
           });
+          // 更新照片預覽和計數
+          updateSelectedPhotos();
+          document.getElementById('photoCount').textContent = '0';
         } else {
           list.innerHTML = '<div class="text-muted">無照片可選</div>';
         }
@@ -628,6 +671,7 @@ require_once("DB_close.php");
     const selectedCards = document.querySelectorAll('.photo-card-select.selected');
     const wrap = document.getElementById('photoPreviewWrap');
     const grid = document.getElementById('photoPreview');
+    const photoCount = document.getElementById('photoCount');
     grid.innerHTML = '';
     selectedPhotos = [];
     
@@ -644,15 +688,23 @@ require_once("DB_close.php");
         previewImg.style.objectFit = 'cover';
         previewImg.style.borderRadius = '8px';
         previewImg.style.marginRight = '4px';
+        previewImg.style.marginBottom = '4px';
         grid.appendChild(previewImg);
         
+        // 從原始數據中獲取完整的照片資訊
+        const photoData = card.dataset.photoInfo ? JSON.parse(card.dataset.photoInfo) : {};
         selectedPhotos.push({
           path: photoPath,
-          album_name: photoInfo
+          album_name: photoInfo,
+          datetime: photoData.datetime,
+          latitude: photoData.latitude,
+          longitude: photoData.longitude
         });
       });
-      wrap.style.display = '';
+      photoCount.textContent = selectedCards.length;
+      wrap.style.display = 'block';
     } else {
+      photoCount.textContent = '0';
       wrap.style.display = 'none';
     }
   }
