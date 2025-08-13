@@ -724,6 +724,7 @@ require_once("DB_close.php");
       .then(data => {
         const wrap = document.getElementById('photoPreviewWrap');
         const grid = document.getElementById('photoPreview');
+        const photoCount = document.getElementById('photoCount');
         grid.innerHTML = '';
         selectedPhotos = [];
         if (data.photos && data.photos.length) {
@@ -735,11 +736,14 @@ require_once("DB_close.php");
             img.style.objectFit = 'cover';
             img.style.borderRadius = '8px';
             img.style.marginRight = '4px';
+            img.style.marginBottom = '4px';
             grid.appendChild(img);
             selectedPhotos.push(photo);
           });
-          wrap.style.display = '';
+          photoCount.textContent = data.photos.length;
+          wrap.style.display = 'block';
         } else {
+          photoCount.textContent = '0';
           wrap.style.display = 'none';
         }
       });
