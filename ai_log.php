@@ -347,10 +347,10 @@ require_once("DB_close.php");
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">選擇方式</label>
-            <div class="d-flex gap-2 mb-3">
-              <button type="button" class="btn btn-outline-primary" id="selectAlbumBtn">選擇相簿</button>
-              <button type="button" class="btn btn-outline-success" id="selectPhotosBtn">選擇照片</button>
-            </div>
+                         <div class="d-flex gap-2 mb-3 justify-content-center">
+               <button type="button" class="btn btn-outline-primary" id="selectAlbumBtn">選擇相簿</button>
+               <button type="button" class="btn btn-outline-success" id="selectPhotosBtn">選擇照片</button>
+             </div>
             <div class="text-muted small mb-2">
               <i class="fas fa-info-circle"></i> 
               <span id="selectionHint">選擇相簿：選擇整個相簿的所有照片</span>
@@ -370,6 +370,11 @@ require_once("DB_close.php");
           <div class="mb-3">
             <label for="logLength" class="form-label">日誌字數</label>
             <input type="number" class="form-control" id="logLength" min="50" max="2000" value="200">
+          </div>
+          <div class="mb-3">
+            <label for="promptKeywords" class="form-label">輸入提示詞</label>
+            <input type="text" class="form-control" id="promptKeywords" placeholder="例如: 夏天、戶外教學、家族旅遊..." maxlength="100">
+            <div class="form-text">輸入關鍵詞讓 AI 參考，幫助生成更符合您需求的日誌內容</div>
           </div>
           <div class="mb-3" id="aiLogEditWrap" style="display:none;">
             <label class="form-label">AI 生成日誌（可修改）</label>
@@ -490,14 +495,13 @@ require_once("DB_close.php");
       border: 2px solid #28a745;
       box-shadow: 0 0 0 2px #28a745;
     }
-    .photo-card-select img {
-      width: 90px;
-      height: 90px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 6px;
-      background: #f0f0f0;
-    }
+         .photo-card-select img {
+       width: 90px;
+       height: 90px;
+       object-fit: cover;
+       border-radius: 8px;
+       background: #f0f0f0;
+     }
          .photo-card-select .photo-info {
        font-size: 0.75rem;
        color: #666;
@@ -593,6 +597,7 @@ require_once("DB_close.php");
     document.getElementById('aiLogEditWrap').style.display = 'none';
     document.getElementById('saveDiaryBtn').style.display = 'none';
     document.getElementById('aiLogEdit').value = '';
+    document.getElementById('promptKeywords').value = '';
     updateButtonStyles();
   }
 
@@ -643,14 +648,14 @@ require_once("DB_close.php");
             card.className = 'photo-card-select'; // 不預設選中，讓使用者手動選擇
             card.innerHTML = `
               <img src="${photo.path || photo.filename}" alt="photo" onerror="this.src='img/default_album_cover.svg'">
-              <div class="photo-info">${photo.album_name || '未知相簿'}</div>
             `;
-            // 將照片的完整資訊存儲在 data 屬性中
-            card.dataset.photoInfo = JSON.stringify({
-              datetime: photo.datetime,
-              latitude: photo.latitude,
-              longitude: photo.longitude
-            });
+                         // 將照片的完整資訊存儲在 data 屬性中
+             card.dataset.photoInfo = JSON.stringify({
+               album_name: photo.album_name || '未知相簿',
+               datetime: photo.datetime,
+               latitude: photo.latitude,
+               longitude: photo.longitude
+             });
             card.onclick = function() {
               card.classList.toggle('selected');
               updateSelectedPhotos();
@@ -676,31 +681,30 @@ require_once("DB_close.php");
     selectedPhotos = [];
     
     if (selectedCards.length > 0) {
-      selectedCards.forEach(card => {
-        const img = card.querySelector('img');
-        const photoInfo = card.querySelector('.photo-info').textContent;
-        const photoPath = img.src;
-        
-        const previewImg = document.createElement('img');
-        previewImg.src = photoPath;
-        previewImg.style.width = '70px';
-        previewImg.style.height = '70px';
-        previewImg.style.objectFit = 'cover';
-        previewImg.style.borderRadius = '8px';
-        previewImg.style.marginRight = '4px';
-        previewImg.style.marginBottom = '4px';
-        grid.appendChild(previewImg);
-        
-        // 從原始數據中獲取完整的照片資訊
-        const photoData = card.dataset.photoInfo ? JSON.parse(card.dataset.photoInfo) : {};
-        selectedPhotos.push({
-          path: photoPath,
-          album_name: photoInfo,
-          datetime: photoData.datetime,
-          latitude: photoData.latitude,
-          longitude: photoData.longitude
-        });
-      });
+             selectedCards.forEach(card => {
+         const img = card.querySelector('img');
+         const photoPath = img.src;
+         
+         const previewImg = document.createElement('img');
+         previewImg.src = photoPath;
+         previewImg.style.width = '70px';
+         previewImg.style.height = '70px';
+         previewImg.style.objectFit = 'cover';
+         previewImg.style.borderRadius = '8px';
+         previewImg.style.marginRight = '4px';
+         previewImg.style.marginBottom = '4px';
+         grid.appendChild(previewImg);
+         
+         // 從原始數據中獲取完整的照片資訊
+         const photoData = card.dataset.photoInfo ? JSON.parse(card.dataset.photoInfo) : {};
+         selectedPhotos.push({
+           path: photoPath,
+           album_name: photoData.album_name || '未知相簿',
+           datetime: photoData.datetime,
+           latitude: photoData.latitude,
+           longitude: photoData.longitude
+         });
+       });
       photoCount.textContent = selectedCards.length;
       wrap.style.display = 'block';
     } else {
@@ -742,16 +746,24 @@ require_once("DB_close.php");
   const saveDiaryBtn = document.getElementById('saveDiaryBtn');
   submitLogBtn.onclick = async function() {
     const logLength = document.getElementById('logLength').value;
+    const promptKeywords = document.getElementById('promptKeywords').value.trim();
     if (!logLength || logLength < 50) { alert('請輸入合理字數'); return; }
     if (!selectedPhotos.length) { alert('請選擇照片'); return; }
     
     // 組合 prompt
     let prompt = '';
     if (currentSelectionMode === 'album') {
-      prompt = `請根據以下相簿「${selectedAlbumName}」的所有照片內容，並依照字數 ${logLength} 字，生成一篇日誌。\n`;
+      prompt = `請根據以下相簿「${selectedAlbumName}」的所有照片內容，並依照字數 ${logLength} 字，生成一篇日誌。`;
     } else {
-      prompt = `請根據以下選擇的照片內容，並依照字數 ${logLength} 字，生成一篇日誌。\n`;
+      prompt = `請根據以下選擇的照片內容，並依照字數 ${logLength} 字，生成一篇日誌。`;
     }
+    
+    // 如果有輸入提示詞，加入到 prompt 中
+    if (promptKeywords) {
+      prompt += `\n\n請參考以下關鍵詞來生成日誌：${promptKeywords}`;
+    }
+    
+    prompt += '\n';
     
     selectedPhotos.forEach((photo, idx) => {
       prompt += `照片${idx+1}: 路徑: ${photo.path || photo.filename}, `;
