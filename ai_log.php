@@ -551,7 +551,7 @@ require_once("DB_close.php");
     currentSelectionMode = 'album';
     document.getElementById('albumCardList').style.display = 'flex';
     document.getElementById('allPhotosList').style.display = 'none';
-    document.getElementById('photoPreviewWrap').style.display = 'none';
+    // 不清空照片預覽，讓使用者可以看到之前選擇的照片
     loadAlbums();
     updateButtonStyles();
   };
@@ -561,7 +561,7 @@ require_once("DB_close.php");
     currentSelectionMode = 'photos';
     document.getElementById('albumCardList').style.display = 'none';
     document.getElementById('allPhotosList').style.display = 'flex';
-    document.getElementById('photoPreviewWrap').style.display = 'none'; // 先不顯示照片預覽
+    // 不清空照片預覽，讓使用者可以看到之前選擇的相簿照片
     loadAllPhotos();
     updateButtonStyles();
   };
@@ -592,6 +592,9 @@ require_once("DB_close.php");
     document.getElementById('saveDiaryBtn').style.display = 'none';
     document.getElementById('aiLogEdit').value = '';
     document.getElementById('promptKeywords').value = '';
+    // 清空所有選擇狀態
+    document.querySelectorAll('.album-card-select.selected').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.photo-card-select.selected').forEach(c => c.classList.remove('selected'));
     updateButtonStyles();
   }
 
@@ -602,9 +605,7 @@ require_once("DB_close.php");
       .then(data => {
         const list = document.getElementById('albumCardList');
         list.innerHTML = '';
-        selectedAlbumId = null;
-        selectedAlbumName = '';
-        selectedPhotos = [];
+        // 不清空 selectedPhotos，保持之前選擇的照片
         if (data.status === 'success' && data.albums) {
           data.albums.forEach(album => {
             const card = document.createElement('div');
@@ -613,13 +614,15 @@ require_once("DB_close.php");
                               <img src="img/default_album_cover.svg" alt="cover">
               <div class="album-title">${album.name}</div>
             `;
-            card.onclick = function() {
-              document.querySelectorAll('.album-card-select').forEach(c => c.classList.remove('selected'));
-              card.classList.add('selected');
-              selectedAlbumId = album.id;
-              selectedAlbumName = album.name;
-              loadPhotosForAlbum(album.id);
-            };
+                         card.onclick = function() {
+               document.querySelectorAll('.album-card-select').forEach(c => c.classList.remove('selected'));
+               card.classList.add('selected');
+               selectedAlbumId = album.id;
+               selectedAlbumName = album.name;
+               // 清空之前選擇的照片，載入新相簿的照片
+               selectedPhotos = [];
+               loadPhotosForAlbum(album.id);
+             };
             list.appendChild(card);
           });
         } else {
@@ -628,15 +631,15 @@ require_once("DB_close.php");
       });
   }
   
-     // 載入所有照片並顯示卡片
-   function loadAllPhotos() {
-     fetch('get_all_photos.php')
-       .then(res => res.json())
-       .then(data => {
-         const list = document.getElementById('allPhotosList');
-         list.innerHTML = '';
-         selectedPhotos = [];
-         if (data.status === 'success' && data.photos) {
+           // 載入所有照片並顯示卡片
+    function loadAllPhotos() {
+      fetch('get_all_photos.php')
+        .then(res => res.json())
+        .then(data => {
+          const list = document.getElementById('allPhotosList');
+          list.innerHTML = '';
+          // 不清空 selectedPhotos，保持之前選擇的相簿照片
+          if (data.status === 'success' && data.photos) {
            // 使用 Set 來去重，以照片路徑作為唯一識別
            const uniquePhotos = new Map();
            data.photos.forEach(photo => {
@@ -756,7 +759,19 @@ require_once("DB_close.php");
     const logLength = document.getElementById('logLength').value;
     const promptKeywords = document.getElementById('promptKeywords').value.trim();
     if (!logLength || logLength < 50) { alert('請輸入合理字數'); return; }
-    if (!selectedPhotos.length) { alert('請選擇照片'); return; }
+    
+    // 檢查是否有選擇相簿或照片
+    if (currentSelectionMode === 'album') {
+      if (!selectedAlbumId || !selectedAlbumName) {
+        alert('請選擇相簿'); 
+        return;
+      }
+    } else {
+      if (!selectedPhotos.length) {
+        alert('請選擇照片'); 
+        return;
+      }
+    }
     
     // 組合 prompt
     let prompt = '';
