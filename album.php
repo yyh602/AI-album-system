@@ -82,23 +82,28 @@ require_once("DB_close.php");
         margin-left: 8px;
     }
 
+    /* ✅ 相簿區塊：不再用 100vw 與負邊距，改用容器寬度 + padding 留白 */
+    .album-section {
+        /* 可視需要限制整體最大寬度，避免超大螢幕太寬 */
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px; /* 這層也留一層左右縫隙，雙保險 */
+        box-sizing: border-box;
+    }
+
     .album-section-content {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 桌機每排5張 */
-    gap: 18px;
-    background: #f8f9fa;
-    border-radius: 0; /* 去除圓角 */
-    max-height: none; /* 取消高度限制 */
-    overflow-y: visible; /* 無需滾動 */
-    width: 100vw; /* 滿版寬度 */
-    margin-left: calc(-1 * (100vw - 100%) / 2); /* 左右負邊距以滿版置中 */
-    margin-right: calc(-1 * (100vw - 100%) / 2);
-    margin-top: 0;
-    margin-bottom: 0;
-    padding: 0; /* 拿掉上下左右內距 */
-}
-
-
+        display: grid;
+        grid-template-columns: repeat(5, 1fr); /* 桌機每排5張 */
+        gap: 18px;
+        background: #f8f9fa;
+        border-radius: 0;
+        max-height: none;
+        overflow-y: visible;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 20px; /* 這裡是主要的左右縫隙 */
+        box-sizing: border-box; /* 確保 padding 被計入寬度 */
+    }
 
     .album-card-preview {
         display: flex;
@@ -121,6 +126,7 @@ require_once("DB_close.php");
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
     }
 
     .album-card-title {
@@ -143,29 +149,28 @@ require_once("DB_close.php");
         gap: 12px;
     }
 
-    /* 響應式調整：手機畫面寬度下每排 3 張 */
+    /* 手機版 */
     @media (max-width: 576px) {
-    .album-section-content {
-        width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-        padding: 12px;
-        grid-template-columns: repeat(3, 1fr); /* 手機每排3張 */
-        gap: 12px;
+        .album-section {
+            padding: 0 12px;
+        }
+        .album-section-content {
+            grid-template-columns: repeat(3, 1fr); /* 手機每排3張 */
+            gap: 12px;
+            padding: 0 12px; /* 手機左右縫隙 */
+        }
+        .album-card-title {
+            font-size: 0.85rem;
+        }
     }
-
-    .album-card-title {
-        font-size: 0.85rem;
-    }
-}
-</style>
+    </style>
 
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
-          <img src="img/logo.svg" width="32" height="32" class="me-2">
+          <img src="img/logo.svg" width="32" height="32" class="me-2" alt="logo">
           <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -193,17 +198,16 @@ require_once("DB_close.php");
 
     <!-- 返回按鈕 + 標題列 -->
     <div class="container mt-4">
-  <div class="d-flex align-items-center mb-3">
-    <a href="welcome.php" class="btn btn-outline-secondary rounded-circle me-3"
-       title="返回首頁"
-       style="width: 42px; height: 42px;">
-      <i class="fas fa-arrow-left"></i>
-    </a>
-    <h2 class="mb-0">我的相簿</h2>
-  </div>
+      <div class="d-flex align-items-center mb-3">
+        <a href="welcome.php" class="btn btn-outline-secondary rounded-circle me-3"
+           title="返回首頁"
+           style="width: 42px; height: 42px;">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <h2 class="mb-0">我的相簿</h2>
+      </div>
 
-    
-    <div class="container mt-4">
+      <div class="container mt-4">
         <div class="album-header">
             <h2 class="add-album-title">新增相簿 <button class="album-add-btn" id="addAlbumBtn">＋</button></h2>
         </div>
@@ -236,10 +240,12 @@ require_once("DB_close.php");
             </div>
         </div>
 
+        <!-- ✅ 相簿區塊 -->
         <div class="album-section">
             <div class="album-section-content" id="myAlbums"></div>
         </div>
         
+      </div>
     </div>
 
     <script>
@@ -272,6 +278,7 @@ require_once("DB_close.php");
             const albumNameInput = document.getElementById('albumNameInput');
             if (albumNameInput) albumNameInput.value = '';
         }
+
         // 動態載入我的相簿
         async function loadMyAlbums() {
             const container = document.getElementById('myAlbums');
@@ -305,7 +312,8 @@ require_once("DB_close.php");
                 container.innerHTML = '<span style="color:#888;">載入失敗</span>';
             }
         }
-        // 動態載入時間區塊（每月卡片，點擊可看該月所有照片）
+
+        // 動態載入時間區塊（每月卡片）
         async function loadPhotosByMonth() {
             const container = document.getElementById('albumsByTime');
             if (!container) {
@@ -342,6 +350,7 @@ require_once("DB_close.php");
                 container.innerHTML = '<span style="color:#888;">載入失敗</span>';
             }
         }
+
         // 顯示月份相簿 Modal
         function showMonthAlbum(month, monthKey) {
             let modal = document.getElementById('monthAlbumModal');
@@ -388,6 +397,7 @@ require_once("DB_close.php");
             const bsModal = new bootstrap.Modal(modal);
             bsModal.show();
         }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('addAlbumBtn').onclick = function() {
                 resetAlbumModal();
@@ -449,6 +459,7 @@ require_once("DB_close.php");
             // 取消時清空
             document.getElementById('modalCancelBtn').onclick = resetAlbumModal;
             document.getElementById('modalCloseBtn').onclick = resetAlbumModal;
+
             // 確認送出（直接上傳到 Azure Storage）
             document.getElementById('modalConfirmBtn').onclick = async function() {
                 const albumName = document.getElementById('albumNameInput').value.trim();
@@ -555,8 +566,15 @@ require_once("DB_close.php");
                 } catch (e) {
                     console.error('上傳過程發生錯誤：', e);
                     alert('建立失敗，請稍後再試');
+                } finally {
+                    const confirmBtn = document.getElementById('modalConfirmBtn');
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = '確認';
+                    }
                 }
             };
+
             // 初始載入我的相簿
             loadMyAlbums();
             // loadPhotosByMonth(); // 暫時停用，因為 albumsByTime 元素不存在
@@ -585,46 +603,42 @@ require_once("DB_close.php");
                     file.type === 'image/heic' || file.type === 'image/heif' ||
                     file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')
                 ) {
-                    // 顯示一個載入或預覽中的提示
+                    // 顯示載入提示
                     const loadingText = document.createElement('div');
                     loadingText.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#888;text-align:center;";
                     loadingText.innerHTML = "HEIC<br>預覽中...";
                     div.appendChild(loadingText);
-                    grid.appendChild(div); // 先將預覽框添加到網格中
+                    grid.appendChild(div);
 
                     heic2any({
                         blob: file,
-                        toType: "image/jpeg", // 轉換為 JPEG 以供預覽
+                        toType: "image/jpeg",
                         quality: 0.8
                     })
                     .then(function (resultBlob) {
                         const reader = new FileReader();
                         reader.onload = function(e) {
-                            // 移除載入文字，顯示圖片
-                            div.removeChild(loadingText); 
+                            div.removeChild(loadingText);
                             const img = document.createElement('img');
                             img.src = e.target.result;
-                            div.prepend(img); // 將圖片插入到最前面
+                            div.prepend(img);
                         };
-                        reader.readAsDataURL(resultBlob); // 讀取轉換後的 Blob
+                        reader.readAsDataURL(resultBlob);
                     })
                     .catch(function (x) {
                         console.error("HEIC 預覽轉換失敗:", x.code, x.message, file.name);
-                        // 備用方案：如果轉換失敗，顯示通用 HEIC 佔位符和錯誤訊息
-                        loadingText.innerHTML = `
-                            HEIC<br>預覽失敗<br><span style="font-size:0.7em;">(${x.code || '未知錯誤'})</span>
-                        `;
-                        loadingText.style.color = 'red'; // 將錯誤訊息設為紅色
+                        loadingText.innerHTML = `HEIC<br>預覽失敗<br><span style="font-size:0.7em;">(${x.code || '未知錯誤'})</span>`;
+                        loadingText.style.color = 'red';
                     });
                 } else {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         const img = document.createElement('img');
                         img.src = e.target.result;
-                        div.prepend(img); // 將圖片插入到最前面
+                        div.prepend(img);
                         grid.appendChild(div);
                     };
-                    reader.readAsDataURL(file); // 處理其他圖片類型
+                    reader.readAsDataURL(file);
                 }
             });
 
