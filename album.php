@@ -107,7 +107,7 @@ require_once("DB_close.php");
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 100%;
+        width: 100%;  // 保持滿版寬度
     }
 
     .album-card-img-wrap {
