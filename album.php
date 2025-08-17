@@ -41,6 +41,7 @@ require_once("DB_close.php");
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
 <style>
 body {
     background: #f6f8fa;
@@ -49,32 +50,26 @@ body {
     padding: 0;
     text-align: center;
 }
-
 .navbar, .custom-navbar {
     background-color: #e9d0c3 !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
 .navbar-brand, .nav-link, .navbar-username {
     color: #333 !important;
 }
-
 .nav-link:hover {
     color: #3498db !important;
 }
-
 .nav-link.active {
     color: #3498db !important;
     font-weight: bold;
 }
-
 .navbar-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
     object-fit: cover;
 }
-
 .navbar-username {
     font-size: 1.1rem;
     font-weight: 500;
@@ -85,31 +80,24 @@ body {
 .album-section {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 8px; /* 左右縫隙縮小為 8px */
+    padding: 0 8px; /* 左右縫隙壓縮 */
     box-sizing: border-box;
 }
-
 .album-section-content {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 18px;
-    background: #f8f9fa;
-    border-radius: 0;
-    max-height: none;
-    overflow-y: visible;
+    grid-template-columns: repeat(5, 1fr); /* 每排5張 */
+    gap: 12px;
     width: 100%;
     margin: 0 auto;
-    padding: 0 8px; /* 左右邊距縮小 */
+    padding: 0;
     box-sizing: border-box;
 }
-
 .album-card-preview {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
 }
-
 .album-card-img-wrap {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -119,21 +107,18 @@ body {
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     margin-bottom: 8px;
 }
-
 .album-card-img-wrap img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
-
 .album-card-title {
-    font-size: 0.95rem;
+    font-size: 1rem; /* 放大文字 */
     font-weight: 500;
     color: #333;
     text-align: center;
 }
-
 .add-album-title {
     text-align: left;
     color: #1976d2;
@@ -151,12 +136,11 @@ body {
 @media (max-width: 576px) {
     .album-section-content {
         grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        padding-left: 8px;
-        padding-right: 8px;
+        gap: 10px;
+        padding: 0 8px;
     }
     .album-card-title {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
     }
 }
 </style>
@@ -168,7 +152,7 @@ body {
       <img src="img/logo.svg" width="32" height="32" class="me-2" alt="logo">
       <span style="font-weight:bold;letter-spacing:1px;">AI智慧相簿管理系統</span>
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavDropdown">
@@ -187,9 +171,7 @@ body {
 
 <div class="container mt-4">
   <div class="d-flex align-items-center mb-3">
-    <a href="welcome.php" class="btn btn-outline-secondary rounded-circle me-3"
-       title="返回首頁"
-       style="width: 42px; height: 42px;">
+    <a href="welcome.php" class="btn btn-outline-secondary rounded-circle me-3" style="width:42px;height:42px;">
       <i class="fas fa-arrow-left"></i>
     </a>
     <h2 class="mb-0">我的相簿</h2>
@@ -197,9 +179,10 @@ body {
 
   <div class="container mt-4">
     <div class="album-header">
-        <h2 class="add-album-title">新增相簿 <button class="album-add-btn" id="addAlbumBtn">＋</button></h2>
+      <h2 class="add-album-title">新增相簿 <button class="album-add-btn" id="addAlbumBtn">＋</button></h2>
     </div>
 
+    <!-- 相簿區塊 -->
     <div class="album-section">
         <div class="album-section-content" id="myAlbums"></div>
     </div>
@@ -207,10 +190,9 @@ body {
 </div>
 
 <script>
-// ---------- 載入相簿 ----------
+// 初始載入相簿
 async function loadMyAlbums() {
     const container = document.getElementById('myAlbums');
-    if (!container) return;
     container.innerHTML = '<span style="color:#888;">載入中...</span>';
     try {
         const res = await fetch('get_album_photos.php?all_albums=1');
@@ -239,9 +221,6 @@ async function loadMyAlbums() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('addAlbumBtn').onclick = function() {
-        alert('開啟新增相簿 Modal'); // 這裡可自行加 modal 功能
-    };
     loadMyAlbums();
 });
 </script>
