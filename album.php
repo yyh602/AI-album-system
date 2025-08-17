@@ -84,18 +84,19 @@ require_once("DB_close.php");
 
     .album-section-content {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 桌機每排5張 */
-    gap: 18px;
+    grid-template-columns: repeat(5, 1fr); /* 維持每排5個 */
+    gap: 18px; /* 維持圖片間的間距 */
     background: #f8f9fa;
-    border-radius: 0; /* 去除圓角 */
-    max-height: none; /* 取消高度限制 */
-    overflow-y: visible; /* 無需滾動 */
-    width: 100%; 
-    margin-left: 0; 
+    border-radius: 0;
+    max-height: none;
+    overflow-y: visible;
+    width: 100%; /* 確保容器寬度符合父層 */
+    /* 刪除負邊距設定 */
+    margin-left: 0;
     margin-right: 0;
     margin-top: 0;
     margin-bottom: 0;
-    padding: 0 20px; /* 拿掉上下左右內距 */
+    padding: 0 40px; /* **這就是你需要修改的地方！** 增加左右內邊距以減少空隙 */
 }
 
 
