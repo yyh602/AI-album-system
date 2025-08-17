@@ -95,9 +95,6 @@ require_once("DB_close.php");
         max-height: none;
         overflow-y: visible;
         width: 100%;
-        margin-left: calc(-1 * (100vw - 100%) / 2); /* 左右負邊距以滿版置中 */
-        margin-right: calc(-1 * (100vw - 100%) / 2);
-        padding: 0 40px;
         justify-content: start;
     }
 
