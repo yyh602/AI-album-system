@@ -86,17 +86,22 @@ require_once("DB_close.php");
       padding-top: 24px;
     }
 
-    .album-section-content {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 18px;
-        background: #f8f9fa;
-        border-radius: 0;
-        max-height: none;
-        overflow-y: visible;
-        width: 100%;
-        justify-content: start;
-    }
+   .album-section-content {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 桌機每排5張 */
+    gap: 18px;
+    background: #f8f9fa;
+    border-radius: 0; /* 去除圓角 */
+    max-height: none; /* 取消高度限制 */
+    overflow-y: visible; /* 無需滾動 */
+    width: 100vw; /* 保持滿版寬度 */
+    margin-left: calc(-1 * (100vw - 100%) / 2); /* 保持左右負邊距以滿版置中 */
+    margin-right: calc(-1 * (100vw - 100%) / 2);
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0 16px; /* 新增左右內邊距，這裡可以調整距離 */
+    box-sizing: border-box; /* 關鍵：確保內邊距不會使元素超出總寬度 */
+}
 
     .album-card-preview {
         display: flex;
