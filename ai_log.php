@@ -56,6 +56,9 @@ if ($user_input) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // 30秒超時
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // 10秒連接超時
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Azure 環境可能需要
 
     $response = curl_exec($ch);
     error_log('Gemini 回應: ' . $response); // 新增：記錄 Gemini API 的原始回應
