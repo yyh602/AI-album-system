@@ -99,7 +99,7 @@ require_once("DB_close.php");
     margin-right: calc(-1 * (100vw - 100%) / 2);
     margin-top: 0;
     margin-bottom: 0;
-    padding: 0 20px; /* 新增左右內邊距，這裡可以調整距離 */
+    padding: 0 25px; /* 新增左右內邊距，這裡可以調整距離 */
     box-sizing: border-box; /* 關鍵：確保內邊距不會使元素超出總寬度 */
 }
 
