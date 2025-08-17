@@ -291,7 +291,7 @@ require_once("DB_close.php");
             selectedAlbumPhotos = [];
             const albumPhotoGrid = document.getElementById('albumPhotoGrid');
             if (albumPhotoGrid) {
-                albumPhotoGrid.innerHTML = '<div class="upload-add-box" id="uploadAddBox">＋</div>';
+                albumPhotoGrid.innerHTML = '<button class="btn btn-outline-primary upload-add-btn" id="uploadAddBtn"><i class="fas fa-plus"></i> 新增照片</button>';
             }
             const uploadStep = document.getElementById('uploadStep');
             if (uploadStep) uploadStep.style.display = '';
@@ -593,78 +593,75 @@ require_once("DB_close.php");
         });
 
         // 修正後的 renderAlbumPhotoGrid 函式
-        function renderAlbumPhotoGrid() {
-            const grid = document.getElementById('albumPhotoGrid');
-            if (!grid) {
-                console.error('albumPhotoGrid element not found');
-                return;
-            }
-            grid.innerHTML = ''; // 清除現有預覽
-            selectedAlbumPhotos.forEach((file, idx) => {
-                const div = document.createElement('div');
-                div.className = 'upload-preview-item';
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'upload-delete-btn';
-                deleteBtn.setAttribute('data-idx', idx);
-                deleteBtn.innerHTML = '&times;';
-                div.appendChild(deleteBtn); // 先添加刪除按鈕
+function renderAlbumPhotoGrid() {
+    const grid = document.getElementById('albumPhotoGrid');
+    if (!grid) {
+        console.error('albumPhotoGrid element not found');
+        return;
+    }
 
-                // 檢查是否為 HEIC/HEIF 並進行客戶端預覽轉換
-                if (
-                    file.type === 'image/heic' || file.type === 'image/heif' ||
-                    file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')
-                ) {
-                    // 顯示一個載入或預覽中的提示
-                    const loadingText = document.createElement('div');
-                    loadingText.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#888;text-align:center;";
-                    loadingText.innerHTML = "HEIC<br>預覽中...";
-                    div.appendChild(loadingText);
-                    grid.appendChild(div); // 先將預覽框添加到網格中
+    grid.innerHTML = ''; // 清除現有預覽
 
-                    heic2any({
-                        blob: file,
-                        toType: "image/jpeg", // 轉換為 JPEG 以供預覽
-                        quality: 0.8
-                    })
-                    .then(function (resultBlob) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            // 移除載入文字，顯示圖片
-                            div.removeChild(loadingText); 
-                            const img = document.createElement('img');
-                            img.src = e.target.result;
-                            div.prepend(img); // 將圖片插入到最前面
-                        };
-                        reader.readAsDataURL(resultBlob); // 讀取轉換後的 Blob
-                    })
-                    .catch(function (x) {
-                        console.error("HEIC 預覽轉換失敗:", x.code, x.message, file.name);
-                        // 備用方案：如果轉換失敗，顯示通用 HEIC 佔位符和錯誤訊息
-                        loadingText.innerHTML = `
-                            HEIC<br>預覽失敗<br><span style="font-size:0.7em;">(${x.code || '未知錯誤'})</span>
-                        `;
-                        loadingText.style.color = 'red'; // 將錯誤訊息設為紅色
-                    });
-                } else {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        div.prepend(img); // 將圖片插入到最前面
-                        grid.appendChild(div);
-                    };
-                    reader.readAsDataURL(file); // 處理其他圖片類型
-                }
+    // 先渲染所有預覽照片
+    selectedAlbumPhotos.forEach((file, idx) => {
+        const div = document.createElement('div');
+        div.className = 'upload-preview-item';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'upload-delete-btn';
+        deleteBtn.setAttribute('data-idx', idx);
+        deleteBtn.innerHTML = '&times;';
+        div.appendChild(deleteBtn);
+
+        if (
+            file.type === 'image/heic' || file.type === 'image/heif' ||
+            file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')
+        ) {
+            const loadingText = document.createElement('div');
+            loadingText.style.cssText = "width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#888;text-align:center;";
+            loadingText.innerHTML = "HEIC<br>預覽中...";
+            div.appendChild(loadingText);
+            grid.appendChild(div);
+
+            heic2any({
+                blob: file,
+                toType: "image/jpeg",
+                quality: 0.8
+            })
+            .then(function (resultBlob) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    div.removeChild(loadingText);
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    div.prepend(img);
+                };
+                reader.readAsDataURL(resultBlob);
+            })
+            .catch(function (x) {
+                console.error("HEIC 預覽轉換失敗:", x.code, x.message, file.name);
+                loadingText.innerHTML = `HEIC<br>預覽失敗<br><span style="font-size:0.7em;">(${x.code || '未知錯誤'})</span>`;
+                loadingText.style.color = 'red';
             });
-
-            // 加號永遠在最後
-            const addBox = document.createElement('div');
-            addBox.className = 'upload-add-box';
-            addBox.id = 'uploadAddBox';
-            addBox.textContent = '＋';
-            grid.appendChild(addBox);
+        } else {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                div.prepend(img);
+                grid.appendChild(div);
+            };
+            reader.readAsDataURL(file);
         }
+    });
+
+    // 最後再添加加號按鈕，並保持正確的 ID
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-outline-primary upload-add-btn';
+    addBtn.id = 'uploadAddBtn';
+    addBtn.innerHTML = '<i class="fas fa-plus"></i> 新增照片';
+    grid.appendChild(addBtn);
+}
     </script>
 </body>
 </html>
