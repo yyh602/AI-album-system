@@ -221,7 +221,9 @@ require_once("DB_close.php");
                             <label class="form-label">請選擇要加入相簿的照片</label>
                             <input type="file" id="albumPhotoInput" accept="image/*,.heic,.heif" multiple style="display:none;">
                             <div class="upload-grid" id="albumPhotoGrid">
-                                <div class="upload-add-box" id="uploadAddBox">＋</div>
+                                <button class="btn btn-outline-primary upload-add-btn" id="uploadAddBtn">
+                                    <i class="fas fa-plus"></i> 新增照片
+                                </button>
                             </div>
                         </div>
                         <div id="nameStep" style="display:none; margin-top:24px;">
