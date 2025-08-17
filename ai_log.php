@@ -85,7 +85,7 @@ if ($is_ajax && $response_text) {
 }
 
 // 歷史日誌讀取
-// 不需要重新載入 DB_open.php，因為之前已經載入過了
+require_once("DB_open.php");
 require_once("DB_helper.php");
 
 $diaries = [];
