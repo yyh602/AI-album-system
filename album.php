@@ -82,18 +82,16 @@ require_once("DB_close.php");
         margin-left: 8px;
     }
 
-    /* ✅ 相簿區塊：不再用 100vw 與負邊距，改用容器寬度 + padding 留白 */
+    /* ========= 相簿格狀區塊（重點） ========= */
     .album-section {
-        /* 可視需要限制整體最大寬度，避免超大螢幕太寬 */
-        max-width: 1400px;
+        max-width: 1600px;   /* 可視需要限制整體最大寬度 */
         margin: 0 auto;
-        padding: 0 20px; /* 這層也留一層左右縫隙，雙保險 */
         box-sizing: border-box;
     }
 
     .album-section-content {
         display: grid;
-        grid-template-columns: repeat(5, 1fr); /* 桌機每排5張 */
+        grid-template-columns: repeat(4, minmax(0, 1fr)); /* 桌機改 4 欄 → 每張更大 */
         gap: 18px;
         background: #f8f9fa;
         border-radius: 0;
@@ -101,8 +99,11 @@ require_once("DB_close.php");
         overflow-y: visible;
         width: 100%;
         margin: 0 auto;
-        padding: 0 20px; /* 這裡是主要的左右縫隙 */
-        box-sizing: border-box; /* 確保 padding 被計入寬度 */
+        padding-left: 1cm;   /* 左右各留約 1 公分 */
+        padding-right: 1cm;  /* 1cm ≈ 37.8px */
+        padding-top: 0;
+        padding-bottom: 0;
+        box-sizing: border-box;
     }
 
     .album-card-preview {
@@ -130,8 +131,8 @@ require_once("DB_close.php");
     }
 
     .album-card-title {
-        font-size: 0.95rem;
-        font-weight: 500;
+        font-size: 1rem;
+        font-weight: 600;
         color: #333;
         text-align: center;
     }
@@ -140,7 +141,7 @@ require_once("DB_close.php");
         text-align: left;
         color: #1976d2;
         font-weight: bold;
-        margin-left: 40px;
+        margin-left: 1cm;     /* 和相簿格狀的左邊距對齊 */
         margin-top: 40px;
         margin-bottom: 24px;
         font-size: 2rem;
@@ -149,22 +150,35 @@ require_once("DB_close.php");
         gap: 12px;
     }
 
-    /* 手機版 */
+    .album-add-btn {
+        border: none;
+        background: #1976d2;
+        color: #fff;
+        border-radius: 8px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+    .album-add-btn:hover { background: #155fa9; }
+
+    /* 手機版：維持左右 1cm，同時每排 3 張縮圖 */
     @media (max-width: 576px) {
-        .album-section {
-            padding: 0 12px;
-        }
         .album-section-content {
-            grid-template-columns: repeat(3, 1fr); /* 手機每排3張 */
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
-            padding: 0 12px; /* 手機左右縫隙 */
+            padding-left: 1cm;
+            padding-right: 1cm;
         }
         .album-card-title {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+        }
+        .add-album-title {
+            margin-left: 1cm;
+            font-size: 1.6rem;
         }
     }
     </style>
-
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
@@ -240,7 +254,7 @@ require_once("DB_close.php");
             </div>
         </div>
 
-        <!-- ✅ 相簿區塊 -->
+        <!-- 相簿格狀清單 -->
         <div class="album-section">
             <div class="album-section-content" id="myAlbums"></div>
         </div>
