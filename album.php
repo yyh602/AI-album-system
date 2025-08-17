@@ -159,6 +159,33 @@ require_once("DB_close.php");
         font-size: 0.85rem;
     }
 }
+
+.upload-add-btn {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    border: 2px dashed #ccc;
+    background-color: #f8f9fa;
+    color: #0d6efd;
+    font-size: 1.25rem;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.upload-add-btn:hover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+}
+
+.upload-add-btn .fas {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
 </style>
 
 </head>
@@ -399,7 +426,7 @@ require_once("DB_close.php");
             };
             // 點擊加號選照片
             document.addEventListener('click', function(e) {
-                if (e.target && e.target.id === 'uploadAddBox') {
+                if (e.target && e.target.id === 'uploadAddBtn') {
                     document.getElementById('albumPhotoInput').click();
                 }
             });
