@@ -90,12 +90,12 @@ require_once("DB_close.php");
     border-radius: 0; /* 去除圓角 */
     max-height: none; /* 取消高度限制 */
     overflow-y: visible; /* 無需滾動 */
-    width: 100vw; /* 滿版寬度 */
-    margin-left: calc(-1 * (100vw - 100%) / 2); /* 左右負邊距以滿版置中 */
-    margin-right: calc(-1 * (100vw - 100%) / 2);
+    width: 100%; 
+    margin-left: 0; 
+    margin-right: 0;
     margin-top: 0;
     margin-bottom: 0;
-    padding: 0; /* 拿掉上下左右內距 */
+    padding: 0 20px; /* 拿掉上下左右內距 */
 }
 
 
@@ -149,7 +149,7 @@ require_once("DB_close.php");
         width: 100%;
         margin-left: 0;
         margin-right: 0;
-        padding: 12px;
+        padding: 0 12px;
         grid-template-columns: repeat(3, 1fr); /* 手機每排3張 */
         gap: 12px;
     }
