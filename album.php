@@ -88,7 +88,7 @@ require_once("DB_close.php");
 
     .album-section-content {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 18px;
         background: #f8f9fa;
         border-radius: 0;
@@ -177,7 +177,7 @@ require_once("DB_close.php");
             margin-left: 0;
             margin-right: 0;
             padding: 0 12px;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 12px;
         }
 
@@ -325,10 +325,12 @@ require_once("DB_close.php");
           </div>
           
           <div class="tab-pane fade" id="by-time" role="tabpanel" aria-labelledby="by-time-tab">
+            <h2 class="category-title">依時間分類</h2>
             <div class="album-section-content" id="albumsByTime"></div>
           </div>
           
           <div class="tab-pane fade" id="by-location" role="tabpanel" aria-labelledby="by-location-tab">
+            <h2 class="category-title">依地點分類</h2>
             <div class="album-section-content" id="albumsByLocation"></div>
           </div>
         </div>
@@ -431,7 +433,7 @@ require_once("DB_close.php");
         }
         container.innerHTML = '<span style="color:#888;">載入中...</span>';
         try {
-            const res = await fetch('get_album_photos.php?all_albums=1');
+            const res = await fetch('classification_album.php?all_albums=1');
             const data = await res.json();
             if (data.status === 'success' && data.albums) {
                 container.innerHTML = '';
@@ -466,25 +468,21 @@ require_once("DB_close.php");
         }
         container.innerHTML = '<span style="color:#888;">載入中...</span>';
         try {
-            const res = await fetch('get_album_photos.php?group_photos_by_month=1');
+            const res = await fetch('classification_album.php?group_photos_by_month=1');
             const data = await res.json();
             if (data.status === 'success' && data.photos_by_month) {
                 container.innerHTML = '';
-                Object.keys(data.photos_by_month).forEach(month => {
-                    const photos = data.photos_by_month[month];
-                    if (!photos.length) return;
-                    const cover = photos[0].path || 'img/default_album_cover.svg';
-                    const monthKey = photos[0].datetime.substr(0, 7); // YYYY-MM
+                data.photos_by_month.forEach(monthData => {
                     const card = document.createElement('div');
                     card.className = 'album-card-preview';
                     card.style.cursor = 'pointer';
                     card.innerHTML = `
                         <div class="album-card-img-wrap">
-                            <img src="${cover}" alt="${month}">
+                            <img src="${monthData.path || 'img/default_album_cover.svg'}" alt="${monthData.month}">
                         </div>
-                        <div class="album-card-title">${month} (${photos.length})</div>
+                        <div class="album-card-title">${monthData.month} (${monthData.photo_count})</div>
                     `;
-                    card.onclick = () => showMonthAlbum(month, monthKey);
+                    card.onclick = () => showMonthAlbum(monthData.month);
                     container.appendChild(card);
                 });
             } else {
@@ -505,7 +503,7 @@ require_once("DB_close.php");
         }
         container.innerHTML = '<span style="color:#888;">載入中...</span>';
         try {
-            const res = await fetch('get_album_photos.php?group_photos_by_location=1');
+            const res = await fetch('classification_album.php?group_photos_by_location=1');
             const data = await res.json();
             if (data.status === 'success' && data.photos_by_location) {
                 container.innerHTML = '';
@@ -534,11 +532,14 @@ require_once("DB_close.php");
     }
 
     // 顯示月份相簿 Modal
-    function showMonthAlbum(month, monthKey) {
+    function showMonthAlbum(month) {
         const modal = new bootstrap.Modal(document.getElementById('monthAlbumModal'));
         document.getElementById('monthAlbumModalLabel').textContent = `${month} 的所有照片`;
         
-        fetch(`get_album_photos.php?month=${monthKey}`)
+        // 將 'YYYY/MM' 格式轉為 'YYYY-MM' 才能傳入 PHP 查詢
+        const monthQuery = month.replace('/', '-');
+
+        fetch(`classification_album.php?month=${monthQuery}`)
             .then(res => res.json())
             .then(data => {
                 const body = document.getElementById('monthAlbumPhotosGrid');
@@ -551,7 +552,7 @@ require_once("DB_close.php");
                                 <div class="album-card-img-wrap">
                                     <img src="${photo.path}" alt="照片">
                                 </div>
-                                <div class="album-card-title">${photo.datetime.substr(11, 5)}</div>
+                                <div class="album-card-title">${photo.datetime.substr(0, 10)}</div>
                             </a>`;
                         body.appendChild(card);
                     });
@@ -566,7 +567,7 @@ require_once("DB_close.php");
         const modal = new bootstrap.Modal(document.getElementById('locationAlbumModal'));
         document.getElementById('locationAlbumModalLabel').textContent = `${location} 的所有照片`;
         
-        fetch(`get_album_photos.php?location=${encodeURIComponent(location)}`)
+        fetch(`classification_album.php?location=${encodeURIComponent(location)}`)
             .then(res => res.json())
             .then(data => {
                 const body = document.getElementById('locationAlbumPhotosGrid');
