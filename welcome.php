@@ -286,7 +286,7 @@ require_once("DB_close.php");
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">回憶旅程</div>
         <div id="memoryCarouselWrap">
-          <div id="memoryCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="2000" style="max-width:420px;margin:0 auto;">
+          <div id="memoryCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="2000" style="max-width:500px;margin:0 auto;">
             <div class="carousel-inner" id="memoryCarouselInner">
               <div class="carousel-item active">
                 <div style="height:220px;display:flex;align-items:center;justify-content:center;color:#888;">載入中...</div>
@@ -363,7 +363,7 @@ require_once("DB_close.php");
                 item.innerHTML = `
                   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;">
                     <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
-                                             <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}" style="width:180px;height:180px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                                             <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}" style="width:220px;height:220px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
                       <div style="margin-top:10px;font-size:1.1rem;font-weight:bold;color:#1976d2;text-align:center;">${album.name}</div>
                     </a>
                   </div>
