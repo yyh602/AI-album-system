@@ -344,7 +344,7 @@ require_once("DB_close.php");
 
     <script>
         // 初始化 Leaflet 地圖
-        const map = L.map('map').setView([23.6978, 120.9605], 2);
+        const map = L.map('map').setView([23.6978, 120.9605], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -361,7 +361,7 @@ require_once("DB_close.php");
                 const item = document.createElement('div');
                 item.className = 'carousel-item' + (idx === 0 ? ' active' : '');
                 item.innerHTML = `
-                  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;">
+                  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
                     <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
                                              <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}" style="width:220px;height:220px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
                       <div style="margin-top:10px;font-size:1.1rem;font-weight:bold;color:#1976d2;text-align:center;">${album.name}</div>
