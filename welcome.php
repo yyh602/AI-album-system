@@ -582,6 +582,16 @@ require_once("DB_close.php");
             
             // 重新載入地圖資料
             loadMapData();
+
+            // 重新載入數據後，確保圖層被重新加回地圖
+            // 這裡我們預設兩個圖層都重新添加到地圖上，讓使用者手動切換
+            if (!map.hasLayer(markerLayer)) {
+                map.addLayer(markerLayer);
+            }
+            if (!map.hasLayer(heatLayer)) {
+                map.addLayer(heatLayer);
+            }
+
         }
 
         // 頁面載入時執行
