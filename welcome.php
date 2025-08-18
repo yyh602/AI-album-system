@@ -581,10 +581,8 @@ require_once("DB_close.php");
         // 將圖層控制加入地圖，讓使用者可以開關圖層
         L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 
-        // 初始化時間軸變數
+        // 初始化時間軸
         let timelineSlider;
-
-
 
         // 載入所有照片的 GPS 點位和熱力圖
         async function loadMapData() {
@@ -720,41 +718,33 @@ require_once("DB_close.php");
             const maxTime = timestamps[timestamps.length - 1];
 
             const timelineElement = document.getElementById('timeline');
-            if (!timelineElement) return;
-            
             if (timelineSlider) {
                 timelineSlider.destroy();
             }
 
-            try {
-                timelineSlider = noUiSlider.create(timelineElement, {
-                    start: [minTime, maxTime],
-                    connect: true,
-                    range: {
-                        'min': minTime,
-                        'max': maxTime
-                    },
-                    tooltips: [
-                        { to: value => new Date(value).toLocaleDateString('zh-TW') },
-                        { to: value => new Date(value).toLocaleDateString('zh-TW') }
-                    ]
-                });
+            timelineSlider = noUiSlider.create(timelineElement, {
+                start: [minTime, maxTime],
+                connect: true,
+                range: {
+                    'min': minTime,
+                    'max': maxTime
+                },
+                tooltips: [
+                    { to: value => new Date(value).toLocaleDateString('zh-TW') },
+                    { to: value => new Date(value).toLocaleDateString('zh-TW') }
+                ]
+            });
 
-                // 更新時間軸標籤
-                const startDateElement = document.getElementById('timeline-start-date');
-                const endDateElement = document.getElementById('timeline-end-date');
-                if (startDateElement) startDateElement.innerText = new Date(minTime).toLocaleDateString('zh-TW');
-                if (endDateElement) endDateElement.innerText = new Date(maxTime).toLocaleDateString('zh-TW');
+            // 更新時間軸標籤
+            document.getElementById('timeline-start-date').innerText = new Date(minTime).toLocaleDateString('zh-TW');
+            document.getElementById('timeline-end-date').innerText = new Date(maxTime).toLocaleDateString('zh-TW');
 
-                // 監聽滑動事件
-                timelineSlider.on('slide', (values) => {
-                    const startTime = parseFloat(values[0]);
-                    const endTime = parseFloat(values[1]);
-                    filterMarkersByTime(startTime, endTime);
-                });
-            } catch (error) {
-                console.error('時間軸初始化失敗:', error);
-            }
+            // 監聽滑動事件
+            timelineSlider.on('slide', (values) => {
+                const startTime = parseFloat(values[0]);
+                const endTime = parseFloat(values[1]);
+                filterMarkersByTime(startTime, endTime);
+            });
         }
         
         // 根據時間範圍篩選地圖點位
@@ -764,11 +754,11 @@ require_once("DB_close.php");
                     const markerTime = layer.options.timestamp;
                     if (markerTime >= startTime && markerTime <= endTime) {
                         if (!map.hasLayer(layer)) {
-                            map.addLayer(layer);
+                            markerLayer.addLayer(layer);
                         }
                     } else {
                         if (map.hasLayer(layer)) {
-                            map.removeLayer(layer);
+                            markerLayer.removeLayer(layer);
                         }
                     }
                 }
@@ -817,6 +807,16 @@ require_once("DB_close.php");
             
             // 重新載入地圖資料
             loadMapData();
+
+            // 重新載入數據後，確保圖層被重新加回地圖
+            // 這裡我們預設兩個圖層都重新添加到地圖上，讓使用者手動切換
+            if (!map.hasLayer(markerLayer)) {
+                map.addLayer(markerLayer);
+            }
+            if (!map.hasLayer(heatLayer)) {
+                map.addLayer(heatLayer);
+            }
+
         }
 
         // 頁面載入時執行
