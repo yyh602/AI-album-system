@@ -120,21 +120,14 @@ require_once("DB_close.php");
             margin-bottom: 32px;
             line-height: 1.7;
         }
-        /* 調整所有功能區塊的間距與圓角 */
-        .album-section,
-        .map-section {
+        .upload-section, .map-section {
             margin: 0 auto 36px auto;
             max-width: 700px;
             background: #fff;
             border-radius: 12px;
             padding: 24px 24px 32px 24px;
             box-sizing: border-box;
-            box-shadow: 0 0px 8px rgba(0,0,0,0.04);
-            transition: box-shadow 0.3s ease;
-        }
-        .album-section:hover,
-        .map-section:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .upload-label, .map-label {
             text-align: left;
@@ -237,18 +230,85 @@ require_once("DB_close.php");
             text-decoration: none;
             color: #007BFF;
         }
+        /* 手機 RWD 加強，像 app 畫面，兩側留白 */
+        @media (max-width: 800px) {
+            .main-content, .upload-section, .map-section {
+                max-width: 100vw;
+                padding: 12px 4vw 18px 4vw;
+            }
+            #map { max-width: 100vw; }
+            .upload-section, .map-section { border-radius: 8px; box-shadow: none; }
+        }
+        @media (max-width: 576px) {
+            .main-content, .upload-section, .map-section { padding: 8px 8px 12px 8px; }
+            .welcome-message { font-size: 1rem; }
+            .add-box { width: 56px; height: 56px; font-size: 2.2rem; }
+            #map { height: 240px; }
+            .upload-section, .map-section { border-radius: 8px; }
+            .navbar { border-radius: 0; }
+        }
+        #memoryCarousel .carousel-control-prev,
+        #memoryCarousel .carousel-control-next {
+          width: 48px;
+          height: 48px;
+          top: 50%;
+          transform: translateY(-50%);
+          opacity: 1 !important;
+          background: #e0e0e0 !important;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s;
+        }
+
+        /* 將箭頭向左和向右推動 */
+        #memoryCarousel .carousel-control-prev {
+            /* 調整這個值來控制左邊箭頭的距離 */
+            left: -80px; /* 這裡的值可以根據您的佈局調整，例如 -50px, -70px 等 */
+        }
+
+        #memoryCarousel .carousel-control-next {
+            /* 調整這個值來控制右邊箭頭的距離 */
+            right: -80px; /* 這裡的值可以與 left 屬性保持一致 */
+        }
+
+        #memoryCarousel .carousel-control-prev:hover,
+        #memoryCarousel .carousel-control-next:hover {
+          background: #bdbdbd !important;
+        }
+        #memoryCarousel .carousel-control-prev-icon,
+        #memoryCarousel .carousel-control-next-icon {
+          background-size: 80% 80%;
+          filter: none;
+          background-color: transparent;
+          mask-image: none;
+          -webkit-mask-image: none;
+          /* 讓箭頭顏色變深灰 */
+          filter: invert(30%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(60%) contrast(90%);
+        }
         
         /* 歷史日誌樣式 */
         .history-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         
         .history-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          justify-content: center;
+        }
+        
+        @media (max-width: 576px) {
+          .history-item {
+            width: 100px !important;
+          }
+          .history-item img {
+            width: 100px !important;
+            height: 100px !important;
+          }
         }
 
         /* 時間軸樣式 */
@@ -312,152 +372,10 @@ require_once("DB_close.php");
             font-size: 0.7rem;
             color: #888;
         }
-        
-        /* === 手機 RWD 美化部分 === */
-        @media (max-width: 800px) {
-            .main-content {
-                max-width: 100vw;
-                padding: 12px 4vw 18px 4vw;
-            }
-            .album-section, .map-section {
-                padding: 24px 20px 32px 20px;
-                border-radius: 12px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* 增加陰影效果 */
-                margin-bottom: 20px;
-            }
-            #map { max-width: 100vw; }
-            .upload-section, .map-section { border-radius: 8px; box-shadow: none; }
-        }
-        @media (max-width: 576px) {
-            /* 主要內容區塊 */
-            .main-content {
-                padding: 8px 12px 12px 12px;
-            }
-            .welcome-message {
-                font-size: 0.9rem; /* 縮小首頁標語字體 */
-                line-height: 1.5;
-                padding: 12px 8px;
-                margin-bottom: 24px;
-                background-color: #f0f3f6; /* 淡化背景色 */
-                border-radius: 8px;
-            }
-            
-            /* 調整所有功能區塊的間距與圓角 */
-            .album-section,
-            .map-section {
-                max-width: 100%;
-                padding: 20px;
-                border-radius: 12px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* 增加陰影效果 */
-                margin-bottom: 20px;
-            }
-
-            /* 導覽列調整 */
-            .navbar {
-                border-radius: 0;
-            }
-            .navbar-toggler {
-                padding: 0;
-                border: none;
-                outline: none;
-            }
-            .navbar-toggler-icon {
-                background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3e%3cpath stroke='rgba(0, 0, 0, 0.5)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-            }
-
-            /* 上傳區塊 */
-            .upload-drop-area {
-                min-height: 150px;
-            }
-            .add-box {
-                width: 50px;
-                height: 50px;
-                font-size: 2rem;
-            }
-
-            /* 地圖區塊 */
-            #map {
-                height: 250px;
-                border-radius: 8px;
-            }
-            .map-stats {
-                /* 將統計資訊框改為懸浮在右下角，並增加透明度 */
-                top: auto !important;
-                left: 50% !important;
-                bottom: 20px;
-                transform: translateX(-50%) !important;
-                background: rgba(255, 255, 255, 0.8) !important;
-                border-radius: 20px !important;
-                padding: 6px 16px !important;
-                font-size: 0.85rem !important;
-            }
-            .map-stats button {
-                display: none; /* 隱藏重新整理按鈕，讓版面更簡潔 */
-            }
-
-            /* 回憶旅程幻燈片 */
-            #memoryCarousel {
-                max-width: 100% !important;
-            }
-            #memoryCarousel .carousel-control-prev,
-            #memoryCarousel .carousel-control-next {
-                left: 0; /* 箭頭回到圖片邊緣 */
-                right: 0;
-                top: 30%; /* 調整箭頭位置 */
-                width: 25px; /* 縮小箭頭 */
-                height: 25px;
-                background: none !important;
-                opacity: 0.7 !important;
-            }
-            #memoryCarousel .carousel-control-prev {
-                left: 5px;
-            }
-            #memoryCarousel .carousel-control-next {
-                right: 5px;
-            }
-            #memoryCarousel .carousel-control-prev-icon,
-            #memoryCarousel .carousel-control-next-icon {
-                background-size: 100% 100%; /* 讓箭頭圖示填滿按鈕 */
-                filter: invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(80%) contrast(100%); /* 變更箭頭顏色為深灰 */
-            }
-            #memoryCarousel .carousel-item img {
-                width: 100% !important;
-                height: auto !important;
-                aspect-ratio: 1 / 1; /* 強制圖片為正方形 */
-            }
-            #memoryCarousel .carousel-item a div {
-                font-size: 1.1rem; /* 調整相簿名稱字體大小 */
-            }
-
-            /* 歷史日誌區塊 */
-            .history-grid {
-                justify-content: space-between;
-                gap: 8px;
-            }
-            .history-item {
-                width: calc(50% - 4px) !important; /* 讓卡片以兩欄顯示 */
-                margin-bottom: 8px;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            }
-            .history-item img {
-                width: 100% !important;
-                height: auto !important;
-                aspect-ratio: 1 / 1; /* 強制圖片為正方形 */
-                object-fit: cover;
-            }
-            .history-item > div {
-                padding: 8px;
-            }
-            .history-item div div:first-child {
-                font-size: 0.8rem;
-            }
-            .history-item div div:last-child {
-                font-size: 0.7rem;
-            }
-        }
     </style>
 </head>
 <body>
+    <!-- 導覽列 -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
@@ -493,6 +411,7 @@ require_once("DB_close.php");
         <div>我們將為您智慧化整理照片，並提供AI生成日誌功能</div>
       </div>
     </div>
+    <!-- 回憶旅程幻燈片區塊（獨立區塊） -->
     <div class="container" style="max-width: 1000px; margin-top:32px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">回憶旅程</div>
@@ -516,6 +435,7 @@ require_once("DB_close.php");
       </div>
     </div>
 
+    <!-- 歷史日誌區塊（獨立區塊） -->
     <div class="container" style="max-width: 700px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">歷史日誌</div>
@@ -539,13 +459,15 @@ require_once("DB_close.php");
       </div>
     </div>
 
+    <!-- 地圖總覽區塊（獨立區塊） -->
     <div class="container" style="max-width: 700px; margin-bottom:32px;">
       <div class="map-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label">地圖總覽</div>
         <div id="map" style="height: 400px; width: 100%; max-width: 800px; margin: 0 auto; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); background: #fff;"></div>
       </div>
     </div>
-    
+
+    <!-- 時間軸區塊 -->
     <div class="timeline-container">
         <div class="timeline-title">照片時間軸</div>
         <div id="timeline"></div>
@@ -554,7 +476,7 @@ require_once("DB_close.php");
             <span id="timeline-end-date"></span>
         </div>
     </div>
-    
+
     <div class="links">
         <a href="records.php">📂 查看上傳紀錄</a>
         <a href="open.php">🚪 登出</a>
@@ -581,7 +503,7 @@ require_once("DB_close.php");
         // 將圖層控制加入地圖，讓使用者可以開關圖層
         L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 
-        // 初始化時間軸
+        // 初始化時間軸變數
         let timelineSlider;
 
         // 載入所有照片的 GPS 點位和熱力圖
@@ -718,33 +640,41 @@ require_once("DB_close.php");
             const maxTime = timestamps[timestamps.length - 1];
 
             const timelineElement = document.getElementById('timeline');
+            if (!timelineElement) return;
+            
             if (timelineSlider) {
                 timelineSlider.destroy();
             }
 
-            timelineSlider = noUiSlider.create(timelineElement, {
-                start: [minTime, maxTime],
-                connect: true,
-                range: {
-                    'min': minTime,
-                    'max': maxTime
-                },
-                tooltips: [
-                    { to: value => new Date(value).toLocaleDateString('zh-TW') },
-                    { to: value => new Date(value).toLocaleDateString('zh-TW') }
-                ]
-            });
+            try {
+                timelineSlider = noUiSlider.create(timelineElement, {
+                    start: [minTime, maxTime],
+                    connect: true,
+                    range: {
+                        'min': minTime,
+                        'max': maxTime
+                    },
+                    tooltips: [
+                        { to: value => new Date(value).toLocaleDateString('zh-TW') },
+                        { to: value => new Date(value).toLocaleDateString('zh-TW') }
+                    ]
+                });
 
-            // 更新時間軸標籤
-            document.getElementById('timeline-start-date').innerText = new Date(minTime).toLocaleDateString('zh-TW');
-            document.getElementById('timeline-end-date').innerText = new Date(maxTime).toLocaleDateString('zh-TW');
+                // 更新時間軸標籤
+                const startDateElement = document.getElementById('timeline-start-date');
+                const endDateElement = document.getElementById('timeline-end-date');
+                if (startDateElement) startDateElement.innerText = new Date(minTime).toLocaleDateString('zh-TW');
+                if (endDateElement) endDateElement.innerText = new Date(maxTime).toLocaleDateString('zh-TW');
 
-            // 監聽滑動事件
-            timelineSlider.on('slide', (values) => {
-                const startTime = parseFloat(values[0]);
-                const endTime = parseFloat(values[1]);
-                filterMarkersByTime(startTime, endTime);
-            });
+                // 監聽滑動事件
+                timelineSlider.on('slide', (values) => {
+                    const startTime = parseFloat(values[0]);
+                    const endTime = parseFloat(values[1]);
+                    filterMarkersByTime(startTime, endTime);
+                });
+            } catch (error) {
+                console.error('時間軸初始化失敗:', error);
+            }
         }
         
         // 根據時間範圍篩選地圖點位
@@ -754,11 +684,11 @@ require_once("DB_close.php");
                     const markerTime = layer.options.timestamp;
                     if (markerTime >= startTime && markerTime <= endTime) {
                         if (!map.hasLayer(layer)) {
-                            markerLayer.addLayer(layer);
+                            map.addLayer(layer);
                         }
                     } else {
                         if (map.hasLayer(layer)) {
-                            markerLayer.removeLayer(layer);
+                            map.removeLayer(layer);
                         }
                     }
                 }
@@ -807,16 +737,6 @@ require_once("DB_close.php");
             
             // 重新載入地圖資料
             loadMapData();
-
-            // 重新載入數據後，確保圖層被重新加回地圖
-            // 這裡我們預設兩個圖層都重新添加到地圖上，讓使用者手動切換
-            if (!map.hasLayer(markerLayer)) {
-                map.addLayer(markerLayer);
-            }
-            if (!map.hasLayer(heatLayer)) {
-                map.addLayer(heatLayer);
-            }
-
         }
 
         // 頁面載入時執行
