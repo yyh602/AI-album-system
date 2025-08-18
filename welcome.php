@@ -234,6 +234,18 @@ require_once("DB_close.php");
           justify-content: center;
           transition: background 0.2s;
         }
+
+        /* 將箭頭向左和向右推動 */
+        #memoryCarousel .carousel-control-prev {
+            /* 調整這個值來控制左邊箭頭的距離 */
+            left: -60px; /* 這裡的值可以根據您的佈局調整，例如 -50px, -70px 等 */
+        }
+
+        #memoryCarousel .carousel-control-next {
+            /* 調整這個值來控制右邊箭頭的距離 */
+            right: -60px; /* 這裡的值可以與 left 屬性保持一致 */
+        }
+
         #memoryCarousel .carousel-control-prev:hover,
         #memoryCarousel .carousel-control-next:hover {
           background: #bdbdbd !important;
@@ -373,7 +385,7 @@ require_once("DB_close.php");
 
     <script>
         // 初始化 Leaflet 地圖
-        const map = L.map('map').setView([23.6978, 120.9605], 7);
+        const map = L.map('map').setView([23.6978, 120.9605], 6.5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
