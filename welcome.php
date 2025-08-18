@@ -282,7 +282,7 @@ require_once("DB_close.php");
       </div>
     </div>
     <!-- 回憶旅程幻燈片區塊（獨立區塊） -->
-    <div class="container" style="max-width: 700px; margin-top:32px; margin-bottom:32px;">
+    <div class="container" style="max-width: 1000px; margin-top:32px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">回憶旅程</div>
         <div id="memoryCarouselWrap">
@@ -344,7 +344,7 @@ require_once("DB_close.php");
 
     <script>
         // 初始化 Leaflet 地圖
-        const map = L.map('map').setView([23.6978, 120.9605], 6);
+        const map = L.map('map').setView([23.6978, 120.9605], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -363,8 +363,8 @@ require_once("DB_close.php");
                 item.innerHTML = `
                   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
                     <a href="view_album.php?album_id=${album.id}" style="text-decoration:none;color:inherit;">
-                                             <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}" style="width:220px;height:220px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-                      <div style="margin-top:10px;font-size:1.1rem;font-weight:bold;color:#1976d2;text-align:center;">${album.name}</div>
+                                             <img src="${album.cover_photo || 'img/default_album_cover.svg'}" alt="${album.name}" style="width:320px;height:320px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                      <div style="margin-top:15px;font-size:1.2rem;font-weight:bold;color:#1976d2;text-align:center;">${album.name}</div>
                     </a>
                   </div>
                 `;
