@@ -26,10 +26,10 @@ if ($link instanceof mysqli && $link !== null) {
 }
 require_once("DB_close.php"); // 確保你的資料庫關閉檔案存在且正確
 
-// ✅ 你的 Gemini API 金鑰 - 建議使用環境變數
-$api_key = getenv('GEMINI_API_KEY') ?: 'AIzaSyBZZhisvYRS6RJe6v8kpKzLcNS8lbzjOlU'; 
-// 使用 gemini-1.5-flash 模型（更穩定）
-$gemini_api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" . $api_key;
+// ✅ 你的 Gemini API 金鑰
+$api_key = 'AIzaSyBZZhisvYRS6RJe6v8kpKzLcNS8lbzjOlU'; 
+// 修改模型名稱為 gemini-1.5-pro
+$gemini_api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" . $api_key;
 
 // 從 POST 取得使用者輸入
 $user_input = $_POST['message'] ?? null;
@@ -56,9 +56,6 @@ if ($user_input) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // 30秒超時
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // 10秒連接超時
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Azure 環境可能需要
 
     $response = curl_exec($ch);
     error_log('Gemini 回應: ' . $response); // 新增：記錄 Gemini API 的原始回應
