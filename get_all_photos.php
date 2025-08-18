@@ -18,11 +18,11 @@ $username = $_SESSION["username"];
 if ($link instanceof mysqli) {
     $sql = "SELECT p.id, p.filename, p.path, p.latitude, p.longitude, p.datetime, a.name as album_name
             FROM photos p
-            INNER JOIN albums a ON p.album_id = a.id
-            WHERE a.username = ?
+            LEFT JOIN albums a ON p.album_id = a.id
+            WHERE a.username = ? OR p.username = ?
             ORDER BY p.datetime DESC";
     $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_bind_param($stmt, "ss", $username, $username);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $photos = mysqli_fetch_all($result, MYSQLI_ASSOC);
@@ -30,11 +30,11 @@ if ($link instanceof mysqli) {
     // 如果是 PDOWrapper，使用 PDO 方式查詢
     $sql = "SELECT p.id, p.filename, p.path, p.latitude, p.longitude, p.datetime, a.name as album_name
             FROM photos p
-            INNER JOIN albums a ON p.album_id = a.id
-            WHERE a.username = ?
+            LEFT JOIN albums a ON p.album_id = a.id
+            WHERE a.username = ? OR p.username = ?
             ORDER BY p.datetime DESC";
     $stmt = $link->prepare($sql);
-    $stmt->execute([$username]);
+    $stmt->execute([$username, $username]);
     $photos = $stmt->fetchAll('ASSOC');
 }
 
