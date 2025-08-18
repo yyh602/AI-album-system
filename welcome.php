@@ -68,6 +68,8 @@ require_once("DB_close.php");
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
     <style>
         body {
             background: #f6f8fa;
@@ -247,6 +249,68 @@ require_once("DB_close.php");
             flex-wrap: wrap;
             gap: 12px;
             justify-content: center;
+        }
+
+        /* 時間軸樣式 */
+        .timeline-container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            max-width: 700px;
+            text-align: center;
+        }
+        .timeline-title {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 20px;
+        }
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .noUi-horizontal {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+        }
+        .noUi-horizontal .noUi-handle {
+            width: 18px;
+            height: 18px;
+            top: -5px;
+            border-radius: 50%;
+            background: #1976d2;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        .noUi-connect {
+            background: #1976d2;
+        }
+        .noUi-target.noUi-connect, .noUi-tooltip {
+            background: none;
+        }
+        .noUi-tooltip {
+            display: none;
+        }
+        .noUi-handle.noUi-active .noUi-tooltip {
+            display: block;
+            background: #1976d2;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            bottom: 120%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .noUi-value {
+            font-size: 0.7rem;
+            color: #888;
         }
         
         /* === 手機 RWD 美化部分 === */
@@ -481,7 +545,16 @@ require_once("DB_close.php");
         <div id="map" style="height: 400px; width: 100%; max-width: 800px; margin: 0 auto; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); background: #fff;"></div>
       </div>
     </div>
-
+    
+    <div class="timeline-container">
+        <div class="timeline-title">照片時間軸</div>
+        <div id="timeline"></div>
+        <div class="timeline-labels">
+            <span id="timeline-start-date"></span>
+            <span id="timeline-end-date"></span>
+        </div>
+    </div>
+    
     <div class="links">
         <a href="records.php">📂 查看上傳紀錄</a>
         <a href="open.php">🚪 登出</a>
@@ -497,6 +570,7 @@ require_once("DB_close.php");
         // 建立兩個獨立的圖層群組
         const markerLayer = L.layerGroup();
         const heatLayer = L.heatLayer([]);
+        let allGpsPhotos = []; // 全域變數，儲存所有有 GPS 資訊的照片
 
         // 定義地圖上方的圖層控制選項
         const overlayMaps = {
@@ -506,6 +580,11 @@ require_once("DB_close.php");
 
         // 將圖層控制加入地圖，讓使用者可以開關圖層
         L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+        // 初始化時間軸變數
+        let timelineSlider;
+
+
 
         // 載入所有照片的 GPS 點位和熱力圖
         async function loadMapData() {
@@ -518,9 +597,9 @@ require_once("DB_close.php");
                 heatLayer.setLatLngs([]);
                 
                 if (data.status === 'success' && data.photos && data.photos.length > 0) {
-                    const gpsPhotos = data.photos.filter(photo => photo.latitude && photo.longitude);
+                    allGpsPhotos = data.photos.filter(photo => photo.latitude && photo.longitude);
                     
-                    if (gpsPhotos.length > 0) {
+                    if (allGpsPhotos.length > 0) {
                         // 1. 處理點位圖層 (Marker Layer)
                         const photoIcon = L.divIcon({
                             className: 'custom-photo-marker',
@@ -530,11 +609,15 @@ require_once("DB_close.php");
                         });
 
                         const bounds = [];
-                        gpsPhotos.forEach(photo => {
+                        allGpsPhotos.forEach(photo => {
                             const lat = parseFloat(photo.latitude);
                             const lng = parseFloat(photo.longitude);
                             if (!isNaN(lat) && !isNaN(lng)) {
-                                const marker = L.marker([lat, lng], { icon: photoIcon })
+                                const marker = L.marker([lat, lng], { 
+                                    icon: photoIcon,
+                                    // 將時間戳記附加到標記上
+                                    timestamp: photo.datetime ? new Date(photo.datetime).getTime() : 0 
+                                })
                                     .bindPopup(`
                                         <div style="text-align: center; min-width: 200px;">
                                             <img src="${photo.path}" alt="${photo.filename}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="window.open('photo_detail.php?id=${photo.id}', '_blank')">
@@ -552,7 +635,7 @@ require_once("DB_close.php");
                         });
 
                         // 2. 處理熱力圖圖層 (Heatmap Layer)
-                        const gpsPoints = gpsPhotos.map(photo => [parseFloat(photo.latitude), parseFloat(photo.longitude)]);
+                        const gpsPoints = allGpsPhotos.map(photo => [parseFloat(photo.latitude), parseFloat(photo.longitude)]);
                         heatLayer.setLatLngs(gpsPoints);
 
                         // 將兩個圖層都加入地圖，但預設熱力圖層可能被關閉
@@ -574,9 +657,12 @@ require_once("DB_close.php");
                             mapContainer.appendChild(statsDiv);
                         }
                         statsDiv.innerHTML = `
-                            <span>📍 共 ${gpsPhotos.length} 張照片有位置資訊</span>
+                            <span>📍 共 ${allGpsPhotos.length} 張照片有位置資訊</span>
                             <button onclick="refreshMap()" style="background: #1976d2; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">重新整理</button>
                         `;
+
+                        // 初始化時間軸
+                        initTimeline();
 
                     } else {
                         // 沒有 GPS 資料時的提示
@@ -617,6 +703,76 @@ require_once("DB_close.php");
                 mapContainer.style.position = 'relative';
                 mapContainer.appendChild(errorDiv);
             }
+        }
+
+        // 初始化時間軸
+        function initTimeline() {
+            if (allGpsPhotos.length === 0) return;
+
+            const timestamps = allGpsPhotos
+                .filter(p => p.datetime)
+                .map(p => new Date(p.datetime).getTime())
+                .sort((a, b) => a - b);
+            
+            if (timestamps.length === 0) return;
+
+            const minTime = timestamps[0];
+            const maxTime = timestamps[timestamps.length - 1];
+
+            const timelineElement = document.getElementById('timeline');
+            if (!timelineElement) return;
+            
+            if (timelineSlider) {
+                timelineSlider.destroy();
+            }
+
+            try {
+                timelineSlider = noUiSlider.create(timelineElement, {
+                    start: [minTime, maxTime],
+                    connect: true,
+                    range: {
+                        'min': minTime,
+                        'max': maxTime
+                    },
+                    tooltips: [
+                        { to: value => new Date(value).toLocaleDateString('zh-TW') },
+                        { to: value => new Date(value).toLocaleDateString('zh-TW') }
+                    ]
+                });
+
+                // 更新時間軸標籤
+                const startDateElement = document.getElementById('timeline-start-date');
+                const endDateElement = document.getElementById('timeline-end-date');
+                if (startDateElement) startDateElement.innerText = new Date(minTime).toLocaleDateString('zh-TW');
+                if (endDateElement) endDateElement.innerText = new Date(maxTime).toLocaleDateString('zh-TW');
+
+                // 監聽滑動事件
+                timelineSlider.on('slide', (values) => {
+                    const startTime = parseFloat(values[0]);
+                    const endTime = parseFloat(values[1]);
+                    filterMarkersByTime(startTime, endTime);
+                });
+            } catch (error) {
+                console.error('時間軸初始化失敗:', error);
+            }
+        }
+        
+        // 根據時間範圍篩選地圖點位
+        function filterMarkersByTime(startTime, endTime) {
+            markerLayer.eachLayer(layer => {
+                if (layer.options.timestamp) {
+                    const markerTime = layer.options.timestamp;
+                    if (markerTime >= startTime && markerTime <= endTime) {
+                        if (!map.hasLayer(layer)) {
+                            map.addLayer(layer);
+                        }
+                    } else {
+                        if (map.hasLayer(layer)) {
+                            map.removeLayer(layer);
+                        }
+                    }
+                }
+            });
         }
 
         // 動態載入回憶旅程（我的相簿）
@@ -661,16 +817,6 @@ require_once("DB_close.php");
             
             // 重新載入地圖資料
             loadMapData();
-
-            // 重新載入數據後，確保圖層被重新加回地圖
-            // 這裡我們預設兩個圖層都重新添加到地圖上，讓使用者手動切換
-            if (!map.hasLayer(markerLayer)) {
-                map.addLayer(markerLayer);
-            }
-            if (!map.hasLayer(heatLayer)) {
-                map.addLayer(heatLayer);
-            }
-
         }
 
         // 頁面載入時執行
