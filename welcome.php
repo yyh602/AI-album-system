@@ -66,6 +66,7 @@ require_once("DB_close.php");
     <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/exifr/dist/lite.umd.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         body {
@@ -195,6 +196,30 @@ require_once("DB_close.php");
         .leaflet-popup-tip {
             background: white !important;
         }
+        
+        /* 圖層控制樣式 */
+        .leaflet-control-layers {
+            background: rgba(255,255,255,0.95) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            padding: 8px !important;
+        }
+        
+        .leaflet-control-layers-toggle {
+            background: #1976d2 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 4px !important;
+        }
+        
+        .leaflet-control-layers-expanded {
+            min-width: 150px !important;
+        }
+        
+        .leaflet-control-layers label {
+            margin-bottom: 4px !important;
+            font-size: 0.9rem !important;
+        }
         .links {
             margin-top: 20px;
         }
@@ -238,12 +263,12 @@ require_once("DB_close.php");
         /* 將箭頭向左和向右推動 */
         #memoryCarousel .carousel-control-prev {
             /* 調整這個值來控制左邊箭頭的距離 */
-            left: -60px; /* 這裡的值可以根據您的佈局調整，例如 -50px, -70px 等 */
+            left: -80px; /* 這裡的值可以根據您的佈局調整，例如 -50px, -70px 等 */
         }
 
         #memoryCarousel .carousel-control-next {
             /* 調整這個值來控制右邊箭頭的距離 */
-            right: -60px; /* 這裡的值可以與 left 屬性保持一致 */
+            right: -80px; /* 這裡的值可以與 left 屬性保持一致 */
         }
 
         #memoryCarousel .carousel-control-prev:hover,
@@ -390,20 +415,34 @@ require_once("DB_close.php");
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 載入所有照片的 GPS 點位到地圖
-        async function loadPhotoMarkers() {
+        // 建立兩個獨立的圖層群組
+        const markerLayer = L.layerGroup();
+        const heatLayer = L.heatLayer([]);
+
+        // 定義地圖上方的圖層控制選項
+        const overlayMaps = {
+            "照片點位": markerLayer,
+            "熱力圖": heatLayer
+        };
+
+        // 將圖層控制加入地圖，讓使用者可以開關圖層
+        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+        // 載入所有照片的 GPS 點位和熱力圖
+        async function loadMapData() {
             try {
                 const res = await fetch('get_all_photos.php');
                 const data = await res.json();
+                
+                // 清空舊圖層
+                markerLayer.clearLayers();
+                heatLayer.setLatLngs([]);
                 
                 if (data.status === 'success' && data.photos && data.photos.length > 0) {
                     const gpsPhotos = data.photos.filter(photo => photo.latitude && photo.longitude);
                     
                     if (gpsPhotos.length > 0) {
-                        // 建立邊界陣列
-                        const bounds = [];
-                        
-                        // 建立自定義圖標
+                        // 1. 處理點位圖層 (Marker Layer)
                         const photoIcon = L.divIcon({
                             className: 'custom-photo-marker',
                             html: '<div style="background: #1976d2; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📷</div>',
@@ -411,64 +450,91 @@ require_once("DB_close.php");
                             iconAnchor: [12, 12]
                         });
 
-                        // 為每個有 GPS 的照片建立標記
+                        const bounds = [];
                         gpsPhotos.forEach(photo => {
-                            const marker = L.marker([parseFloat(photo.latitude), parseFloat(photo.longitude)], { icon: photoIcon })
-                                .addTo(map)
-                                .bindPopup(`
-                                    <div style="text-align: center; min-width: 200px;">
-                                        <img src="${photo.path}" alt="${photo.filename}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="window.open('photo_detail.php?id=${photo.id}', '_blank')">
-                                        <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${photo.album_name || '未分類'}</div>
-                                        <div style="font-size: 0.9rem; color: #666;">${photo.datetime ? new Date(photo.datetime).toLocaleDateString('zh-TW') : '未知日期'}</div>
-                                        <div style="font-size: 0.8rem; color: #888; margin-top: 4px; word-break: break-all;">${photo.filename}</div>
-                                        <div style="margin-top: 8px;">
-                                            <a href="photo_detail.php?id=${photo.id}" target="_blank" style="background: #1976d2; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem;">查看詳情</a>
+                            const lat = parseFloat(photo.latitude);
+                            const lng = parseFloat(photo.longitude);
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                const marker = L.marker([lat, lng], { icon: photoIcon })
+                                    .bindPopup(`
+                                        <div style="text-align: center; min-width: 200px;">
+                                            <img src="${photo.path}" alt="${photo.filename}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="window.open('photo_detail.php?id=${photo.id}', '_blank')">
+                                            <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${photo.album_name || '未分類'}</div>
+                                            <div style="font-size: 0.9rem; color: #666;">${photo.datetime ? new Date(photo.datetime).toLocaleDateString('zh-TW') : '未知日期'}</div>
+                                            <div style="font-size: 0.8rem; color: #888; margin-top: 4px; word-break: break-all;">${photo.filename}</div>
+                                            <div style="margin-top: 8px;">
+                                                <a href="photo_detail.php?id=${photo.id}" target="_blank" style="background: #1976d2; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem;">查看詳情</a>
+                                            </div>
                                         </div>
-                                    </div>
-                                `);
-                            
-                            bounds.push([parseFloat(photo.latitude), parseFloat(photo.longitude)]);
+                                    `);
+                                markerLayer.addLayer(marker);
+                                bounds.push([lat, lng]);
+                            }
                         });
+
+                        // 2. 處理熱力圖圖層 (Heatmap Layer)
+                        const gpsPoints = gpsPhotos.map(photo => [parseFloat(photo.latitude), parseFloat(photo.longitude)]);
+                        heatLayer.setLatLngs(gpsPoints);
+
+                        // 將兩個圖層都加入地圖，但預設熱力圖層可能被關閉
+                        map.addLayer(markerLayer);
                         
-                        // 調整地圖視角以顯示所有標記
+                        // 調整地圖視角以顯示所有點位
                         if (bounds.length > 0) {
                             map.fitBounds(bounds, { padding: [20, 20] });
                         }
-                        
-                        // 在地圖上方顯示統計資訊和重新整理按鈕
+
+                        // 顯示統計資訊
                         const mapContainer = document.getElementById('map');
-                        const statsDiv = document.createElement('div');
-                        statsDiv.style.cssText = 'position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.95); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;';
+                        let statsDiv = mapContainer.querySelector('.map-stats');
+                        if (!statsDiv) {
+                            statsDiv = document.createElement('div');
+                            statsDiv.className = 'map-stats';
+                            statsDiv.style.cssText = 'position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.95); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;';
+                            mapContainer.style.position = 'relative';
+                            mapContainer.appendChild(statsDiv);
+                        }
                         statsDiv.innerHTML = `
                             <span>📍 共 ${gpsPhotos.length} 張照片有位置資訊</span>
                             <button onclick="refreshMap()" style="background: #1976d2; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">重新整理</button>
                         `;
-                        mapContainer.style.position = 'relative';
-                        mapContainer.appendChild(statsDiv);
+
                     } else {
-                        // 沒有 GPS 資料時顯示提示
-                        const mapContainer = document.getElementById('map');
-                        const noDataDiv = document.createElement('div');
-                        noDataDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 20px; border-radius: 8px; text-align: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
-                        noDataDiv.innerHTML = `
-                            <div style="color: #666; margin-bottom: 8px;">📷</div>
-                            <div style="color: #333; font-weight: bold;">尚無照片位置資訊</div>
-                            <div style="color: #888; font-size: 0.9rem; margin-top: 4px;">上傳包含 GPS 資訊的照片即可在地圖上顯示</div>
-                        `;
-                        mapContainer.style.position = 'relative';
-                        mapContainer.appendChild(noDataDiv);
+                        // 沒有 GPS 資料時的提示
+                        showNoDataMessage();
                     }
+                } else {
+                    showNoDataMessage();
                 }
             } catch (e) {
-                console.error('載入照片標記失敗:', e);
-                const mapContainer = document.getElementById('map');
-                const errorDiv = document.createElement('div');
+                console.error('載入地圖資料失敗:', e);
+                showErrorMessage();
+            }
+        }
+
+        // 顯示沒有數據的提示訊息
+        function showNoDataMessage() {
+            const mapContainer = document.getElementById('map');
+            let noDataDiv = mapContainer.querySelector('.no-data-message');
+            if (!noDataDiv) {
+                noDataDiv = document.createElement('div');
+                noDataDiv.className = 'no-data-message';
+                noDataDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 20px; border-radius: 8px; text-align: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
+                noDataDiv.innerHTML = `<div style="color: #666; margin-bottom: 8px;">📷</div><div style="color: #333; font-weight: bold;">尚無照片位置資訊</div><div style="color: #888; font-size: 0.9rem; margin-top: 4px;">上傳包含 GPS 資訊的照片即可在地圖上顯示</div>`;
+                mapContainer.style.position = 'relative';
+                mapContainer.appendChild(noDataDiv);
+            }
+        }
+
+        // 顯示錯誤訊息
+        function showErrorMessage() {
+            const mapContainer = document.getElementById('map');
+            let errorDiv = mapContainer.querySelector('.error-message');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
                 errorDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 20px; border-radius: 8px; text-align: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
-                errorDiv.innerHTML = `
-                    <div style="color: #666; margin-bottom: 8px;">⚠️</div>
-                    <div style="color: #333; font-weight: bold;">載入失敗</div>
-                    <div style="color: #888; font-size: 0.9rem; margin-top: 4px;">請稍後再試</div>
-                `;
+                errorDiv.innerHTML = `<div style="color: #666; margin-bottom: 8px;">⚠️</div><div style="color: #333; font-weight: bold;">載入失敗</div><div style="color: #888; font-size: 0.9rem; margin-top: 4px;">請稍後再試</div>`;
                 mapContainer.style.position = 'relative';
                 mapContainer.appendChild(errorDiv);
             }
@@ -502,30 +568,25 @@ require_once("DB_close.php");
             carouselInner.innerHTML = '<div class="carousel-item active"><div style="height:220px;display:flex;align-items:center;justify-content:center;color:#888;">載入失敗</div></div>';
           }
         }
-        
+
         // 重新整理地圖函數
         function refreshMap() {
-            // 清除所有現有的標記
-            map.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
-            });
+            // 清除所有現有的標記和圖層
+            markerLayer.clearLayers();
+            heatLayer.setLatLngs([]);
             
-            // 清除統計資訊
+            // 清除統計資訊和錯誤訊息
             const mapContainer = document.getElementById('map');
-            const existingStats = mapContainer.querySelector('div[style*="position: absolute"]');
-            if (existingStats) {
-                existingStats.remove();
-            }
+            const existingElements = mapContainer.querySelectorAll('.map-stats, .no-data-message, .error-message');
+            existingElements.forEach(el => el.remove());
             
-            // 重新載入標記
-            loadPhotoMarkers();
+            // 重新載入地圖資料
+            loadMapData();
         }
 
         // 頁面載入時執行
+        loadMapData();
         loadMemoryCarousel();
-        loadPhotoMarkers();
 
         // 顯示日誌詳情
         async function showDiaryDetail(diaryId) {

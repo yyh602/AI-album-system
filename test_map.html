@@ -6,6 +6,7 @@
     <title>地圖測試</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <style>
         #map {
             height: 500px;
@@ -48,18 +49,35 @@
     
     <script>
         // 初始化地圖
-        const map = L.map('map').setView([23.6978, 120.9605], 7);
+        const map = L.map('map').setView([23.6978, 120.9605], 6.5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 測試載入照片標記
-        async function loadPhotoMarkers() {
+        // 建立兩個獨立的圖層群組
+        const markerLayer = L.layerGroup();
+        const heatLayer = L.heatLayer([]);
+
+        // 定義地圖上方的圖層控制選項
+        const overlayMaps = {
+            "照片點位": markerLayer,
+            "熱力圖": heatLayer
+        };
+
+        // 將圖層控制加入地圖，讓使用者可以開關圖層
+        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+        // 測試載入照片標記和熱力圖
+        async function loadMapData() {
             try {
                 const res = await fetch('get_all_photos.php');
                 const data = await res.json();
                 
                 console.log('API 回應:', data);
+                
+                // 清空舊圖層
+                markerLayer.clearLayers();
+                heatLayer.setLatLngs([]);
                 
                 if (data.status === 'success' && data.photos && data.photos.length > 0) {
                     const gpsPhotos = data.photos.filter(photo => photo.latitude && photo.longitude);
@@ -67,9 +85,7 @@
                     console.log('有 GPS 的照片:', gpsPhotos);
                     
                     if (gpsPhotos.length > 0) {
-                        const bounds = [];
-                        
-                        // 建立自定義圖標
+                        // 1. 處理點位圖層 (Marker Layer)
                         const photoIcon = L.divIcon({
                             className: 'custom-photo-marker',
                             html: '<div style="background: #1976d2; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📷</div>',
@@ -77,28 +93,38 @@
                             iconAnchor: [12, 12]
                         });
 
-                        // 為每個有 GPS 的照片建立標記
+                        const bounds = [];
                         gpsPhotos.forEach(photo => {
-                            const marker = L.marker([parseFloat(photo.latitude), parseFloat(photo.longitude)], { icon: photoIcon })
-                                .addTo(map)
-                                .bindPopup(`
-                                    <div style="text-align: center; min-width: 200px;">
-                                        <img src="${photo.path}" alt="${photo.filename}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">
-                                        <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${photo.album_name || '未分類'}</div>
-                                        <div style="font-size: 0.9rem; color: #666;">${photo.datetime ? new Date(photo.datetime).toLocaleDateString('zh-TW') : '未知日期'}</div>
-                                        <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">${photo.filename}</div>
-                                    </div>
-                                `);
-                            
-                            bounds.push([parseFloat(photo.latitude), parseFloat(photo.longitude)]);
+                            const lat = parseFloat(photo.latitude);
+                            const lng = parseFloat(photo.longitude);
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                const marker = L.marker([lat, lng], { icon: photoIcon })
+                                    .bindPopup(`
+                                        <div style="text-align: center; min-width: 200px;">
+                                            <img src="${photo.path}" alt="${photo.filename}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">
+                                            <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${photo.album_name || '未分類'}</div>
+                                            <div style="font-size: 0.9rem; color: #666;">${photo.datetime ? new Date(photo.datetime).toLocaleDateString('zh-TW') : '未知日期'}</div>
+                                            <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">${photo.filename}</div>
+                                        </div>
+                                    `);
+                                markerLayer.addLayer(marker);
+                                bounds.push([lat, lng]);
+                            }
                         });
+
+                        // 2. 處理熱力圖圖層 (Heatmap Layer)
+                        const gpsPoints = gpsPhotos.map(photo => [parseFloat(photo.latitude), parseFloat(photo.longitude)]);
+                        heatLayer.setLatLngs(gpsPoints);
+
+                        // 將兩個圖層都加入地圖
+                        map.addLayer(markerLayer);
                         
                         // 調整地圖視角
                         if (bounds.length > 0) {
                             map.fitBounds(bounds, { padding: [20, 20] });
                         }
                         
-                        console.log(`成功載入 ${gpsPhotos.length} 個標記`);
+                        console.log(`成功載入 ${gpsPhotos.length} 個標記和熱力圖`);
                     } else {
                         console.log('沒有找到有 GPS 資料的照片');
                     }
@@ -106,12 +132,12 @@
                     console.log('API 回應異常:', data);
                 }
             } catch (e) {
-                console.error('載入照片標記失敗:', e);
+                console.error('載入地圖資料失敗:', e);
             }
         }
 
         // 頁面載入時執行
-        loadPhotoMarkers();
+        loadMapData();
     </script>
 </body>
 </html> 
