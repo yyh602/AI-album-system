@@ -24,6 +24,7 @@ if ($link instanceof mysqli && $link !== null) {
         mysqli_stmt_close($stmt);
     }
 }
+
 require_once("DB_close.php"); // 確保你的資料庫關閉檔案存在且正確
 
 // ✅ 你的 Gemini API 金鑰
