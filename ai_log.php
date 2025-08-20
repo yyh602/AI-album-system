@@ -378,12 +378,11 @@ require_once("DB_close.php");
             <textarea class="form-control" id="aiLogEdit" rows="6"></textarea>
           </div>
         </div>
-                 <div class="modal-footer">
-           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-           <button type="button" class="btn btn-primary" id="submitLogBtn">送出</button>
-           <button type="button" class="btn btn-warning" id="regenerateLogBtn" style="display:none;">重新產生</button>
-           <button type="button" class="btn btn-success" id="saveDiaryBtn" style="display:none;">確定</button>
-         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="submitLogBtn">送出</button>
+          <button type="button" class="btn btn-success" id="saveDiaryBtn" style="display:none;">確定</button>
+        </div>
       </div>
     </div>
   </div>
@@ -525,7 +524,6 @@ require_once("DB_close.php");
   const selectPhotosBtn = document.getElementById('selectPhotosBtn');
   const selectAllPhotosBtn = document.getElementById('selectAllPhotosBtn');
   const clearAllPhotosBtn = document.getElementById('clearAllPhotosBtn');
-  const regenerateLogBtn = document.getElementById('regenerateLogBtn');
   
   createLogBtn.onclick = () => {
     resetModal();
@@ -592,8 +590,6 @@ require_once("DB_close.php");
     document.getElementById('photoPreviewWrap').style.display = 'none';
     document.getElementById('aiLogEditWrap').style.display = 'none';
     document.getElementById('saveDiaryBtn').style.display = 'none';
-    document.getElementById('regenerateLogBtn').style.display = 'none';
-    document.getElementById('submitLogBtn').style.display = '';
     document.getElementById('aiLogEdit').value = '';
     document.getElementById('promptKeywords').value = '';
     // 清空所有選擇狀態
@@ -804,7 +800,6 @@ require_once("DB_close.php");
     document.getElementById('aiLogEditWrap').style.display = '';
     document.getElementById('aiLogEdit').value = 'AI 生成中...';
     saveDiaryBtn.style.display = 'none';
-    regenerateLogBtn.style.display = 'none';
     
     // 用 fetch POST 給自己
     const formData = new FormData();
@@ -822,18 +817,9 @@ require_once("DB_close.php");
     if (match) {
       document.getElementById('aiLogEdit').value = match[1].replace(/<br\s*\/?>(\n)?/g, '\n');
       saveDiaryBtn.style.display = '';
-      // 隱藏送出按鈕，顯示重新產生按鈕
-      document.getElementById('submitLogBtn').style.display = 'none';
-      regenerateLogBtn.style.display = '';
     } else {
       document.getElementById('aiLogEdit').value = 'AI 回應解析失敗';
     }
-  };
-
-  // 重新產生日誌
-  regenerateLogBtn.onclick = async function() {
-    // 重新執行送出按鈕的邏輯
-    await submitLogBtn.onclick();
   };
 
   // 儲存日誌
