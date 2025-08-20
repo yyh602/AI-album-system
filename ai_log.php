@@ -122,7 +122,7 @@ require_once("DB_close.php");
 ?>
 
 <!DOCTYPE html>
-<html lang="zh-TW
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <title>AI 智慧相簿管理系統</title>
