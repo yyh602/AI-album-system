@@ -215,6 +215,34 @@ require_once("DB_close.php");
             opacity: 0;
         }
         
+        .welcome-popup.minimized {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .welcome-popup.minimized .welcome-popup-content {
+            display: none;
+        }
+        
+        .welcome-popup.minimized::before {
+            content: "🎉";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #1976d2;
+        }
+        
+        .welcome-popup.minimized:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
+        }
+        
         @keyframes slideInRight {
             from {
                 transform: translateX(100%);
@@ -234,6 +262,17 @@ require_once("DB_close.php");
                 left: 10px;
                 max-width: none;
                 width: auto;
+            }
+            
+            .welcome-popup.minimized {
+                width: 50px;
+                height: 50px;
+                right: 10px;
+                left: auto;
+            }
+            
+            .welcome-popup.minimized::before {
+                font-size: 20px;
             }
         }
         .upload-section, .map-section {
@@ -609,7 +648,7 @@ require_once("DB_close.php");
           <div class="welcome-message-sub">我們將為您智慧化整理照片，並提供AI生成日誌功能</div>
         </div>
         <div class="welcome-popup-footer">
-          <button class="welcome-popup-btn" onclick="closeWelcomePopup()">開始使用</button>
+          <button class="welcome-popup-btn" onclick="minimizeWelcomePopup()">開始使用</button>
         </div>
       </div>
     </div>
@@ -958,6 +997,26 @@ require_once("DB_close.php");
             setTimeout(() => {
                 popup.style.display = 'none';
             }, 300);
+        }
+        
+        // 縮小歡迎彈跳視窗
+        function minimizeWelcomePopup() {
+            const popup = document.getElementById('welcomePopup');
+            popup.classList.add('minimized');
+            
+            // 添加點擊事件來重新展開
+            popup.onclick = function() {
+                expandWelcomePopup();
+            };
+        }
+        
+        // 展開歡迎彈跳視窗
+        function expandWelcomePopup() {
+            const popup = document.getElementById('welcomePopup');
+            popup.classList.remove('minimized');
+            
+            // 移除點擊事件
+            popup.onclick = null;
         }
         
         // 顯示歡迎彈跳視窗
