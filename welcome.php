@@ -662,8 +662,7 @@ require_once("DB_close.php");
           <div class="welcome-message-sub">我們將為您智慧化整理照片，並提供AI生成日誌功能</div>
         </div>
         <div class="welcome-popup-footer">
-          <button class="welcome-popup-btn" onclick="minimizeWelcomePopup()">開始使用</button>
-          <button class="welcome-popup-btn" onclick="testMinimize()" style="margin-left: 8px; background: #ff9800;">測試縮小</button>
+          <button class="welcome-popup-btn" id="startUsingBtn">開始使用</button>
         </div>
       </div>
     </div>
@@ -1041,17 +1040,7 @@ require_once("DB_close.php");
             popup.onclick = null;
         }
         
-        // 測試縮小功能
-        function testMinimize() {
-            console.log('測試縮小功能');
-            const popup = document.getElementById('welcomePopup');
-            if (popup) {
-                console.log('彈跳視窗當前類別:', popup.className);
-                popup.classList.add('minimized');
-                console.log('添加 minimized 後類別:', popup.className);
-                console.log('彈跳視窗樣式:', window.getComputedStyle(popup));
-            }
-        }
+
         
         // 顯示歡迎彈跳視窗
         function showWelcomePopup() {
@@ -1067,6 +1056,17 @@ require_once("DB_close.php");
         // 延遲顯示歡迎彈跳視窗
         setTimeout(() => {
             showWelcomePopup();
+            
+            // 添加開始使用按鈕的事件監聽器
+            const startUsingBtn = document.getElementById('startUsingBtn');
+            if (startUsingBtn) {
+                startUsingBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('開始使用按鈕被點擊');
+                    minimizeWelcomePopup();
+                });
+            }
         }, 1000);
 
         // 顯示日誌詳情
