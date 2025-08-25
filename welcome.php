@@ -113,15 +113,128 @@ require_once("DB_close.php");
         .main-content {
             margin: 0 auto;
             max-width: 900px;
-            padding-top: 32px;
+            padding-top: 16px;
         }
-        .welcome-message {
-            font-size: 1.15rem;
+        /* 浮動歡迎訊息彈跳視窗樣式 */
+        .welcome-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 350px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.5s ease-out;
+            transition: all 0.3s ease;
+        }
+        
+        .welcome-popup-content {
+            padding: 0;
+        }
+        
+        .welcome-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px 12px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .welcome-popup-title {
+            font-weight: 600;
+            color: #1976d2;
+            font-size: 1.1rem;
+        }
+        
+        .welcome-popup-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .welcome-popup-close:hover {
+            background: #f5f5f5;
+            color: #666;
+        }
+        
+        .welcome-popup-body {
+            padding: 16px 20px;
+        }
+        
+        .welcome-message-main {
+            font-size: 1.1rem;
             color: #333;
             font-weight: 600;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .welcome-message-sub {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .welcome-popup-footer {
+            padding: 12px 20px 16px 20px;
             text-align: center;
-            margin-bottom: 32px;
-            line-height: 1.7;
+        }
+        
+        .welcome-popup-btn {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+        }
+        
+        .welcome-popup-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+        
+        .welcome-popup.hidden {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* 手機版彈跳視窗樣式 */
+        @media (max-width: 768px) {
+            .welcome-popup {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                width: auto;
+            }
         }
         .upload-section, .map-section {
             margin: 0 auto 36px auto;
@@ -484,10 +597,20 @@ require_once("DB_close.php");
       </div>
     </nav>
 
-    <div class="container main-content">
-      <div class="welcome-message">
-        <div>準備好了嘛!! 新增照片來集滿世界地圖!!!!!</div>
-        <div>我們將為您智慧化整理照片，並提供AI生成日誌功能</div>
+    <!-- 浮動歡迎訊息彈跳視窗 -->
+    <div class="welcome-popup" id="welcomePopup">
+      <div class="welcome-popup-content">
+        <div class="welcome-popup-header">
+          <span class="welcome-popup-title">🎉 歡迎使用</span>
+          <button class="welcome-popup-close" onclick="closeWelcomePopup()">×</button>
+        </div>
+        <div class="welcome-popup-body">
+          <div class="welcome-message-main">準備好了嘛!! 新增照片來集滿世界地圖!!!!!</div>
+          <div class="welcome-message-sub">我們將為您智慧化整理照片，並提供AI生成日誌功能</div>
+        </div>
+        <div class="welcome-popup-footer">
+          <button class="welcome-popup-btn" onclick="closeWelcomePopup()">開始使用</button>
+        </div>
       </div>
     </div>
     <div class="container" style="max-width: 1000px; margin-top:32px; margin-bottom:32px;">
@@ -826,9 +949,32 @@ require_once("DB_close.php");
             loadMapData();
         }
 
+        // 關閉歡迎彈跳視窗
+        function closeWelcomePopup() {
+            const popup = document.getElementById('welcomePopup');
+            popup.classList.add('hidden');
+            
+            // 3秒後自動隱藏彈跳視窗
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 300);
+        }
+        
+        // 顯示歡迎彈跳視窗
+        function showWelcomePopup() {
+            const popup = document.getElementById('welcomePopup');
+            popup.style.display = 'block';
+            popup.classList.remove('hidden');
+        }
+        
         // 頁面載入時執行
         loadMapData();
         loadMemoryCarousel();
+        
+        // 延遲顯示歡迎彈跳視窗
+        setTimeout(() => {
+            showWelcomePopup();
+        }, 1000);
 
         // 顯示日誌詳情
         async function showDiaryDetail(diaryId) {
