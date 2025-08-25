@@ -63,9 +63,12 @@ require_once("DB_close.php");
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
     <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/exifr/dist/lite.umd.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
@@ -372,6 +375,47 @@ require_once("DB_close.php");
             font-size: 0.7rem;
             color: #888;
         }
+        
+        /* 自定義群集樣式 */
+        .marker-cluster-small {
+            background-color: rgba(25, 118, 210, 0.6);
+        }
+        .marker-cluster-small div {
+            background-color: rgba(25, 118, 210, 0.8);
+        }
+        
+        .marker-cluster-medium {
+            background-color: rgba(255, 152, 0, 0.6);
+        }
+        .marker-cluster-medium div {
+            background-color: rgba(255, 152, 0, 0.8);
+        }
+        
+        .marker-cluster-large {
+            background-color: rgba(244, 67, 54, 0.6);
+        }
+        .marker-cluster-large div {
+            background-color: rgba(244, 67, 54, 0.8);
+        }
+        
+        .marker-cluster {
+            background-clip: padding-box;
+            border-radius: 20px;
+        }
+        .marker-cluster div {
+            width: 30px;
+            height: 30px;
+            margin-left: 5px;
+            margin-top: 5px;
+            text-align: center;
+            border-radius: 15px;
+            font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+            color: white;
+            font-weight: bold;
+        }
+        .marker-cluster span {
+            line-height: 30px;
+        }
     </style>
 </head>
 <body>
@@ -489,14 +533,22 @@ require_once("DB_close.php");
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 建立兩個獨立的圖層群組
-        const markerLayer = L.layerGroup();
+        // 建立群集圖層與熱力圖層
+        const markers = L.markerClusterGroup({
+            chunkedLoading: true,
+            maxClusterRadius: 80,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: true,
+            zoomToBoundsOnClick: true,
+            disableClusteringAtZoom: 18,
+            removeOutsideVisibleBounds: true
+        });
         const heatLayer = L.heatLayer([]);
         let allGpsPhotos = []; // 全域變數，儲存所有有 GPS 資訊的照片
 
         // 定義地圖上方的圖層控制選項
         const overlayMaps = {
-            "照片點位": markerLayer,
+            "照片點位": markers,
             "熱力圖": heatLayer
         };
 
@@ -513,29 +565,20 @@ require_once("DB_close.php");
                 const data = await res.json();
                 
                 // 清空舊圖層
-                markerLayer.clearLayers();
+                markers.clearLayers();
                 heatLayer.setLatLngs([]);
                 
                 if (data.status === 'success' && data.photos && data.photos.length > 0) {
                     allGpsPhotos = data.photos.filter(photo => photo.latitude && photo.longitude);
                     
                     if (allGpsPhotos.length > 0) {
-                        // 1. 處理點位圖層 (Marker Layer)
-                        const photoIcon = L.divIcon({
-                            className: 'custom-photo-marker',
-                            html: '<div style="background: #1976d2; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📷</div>',
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
-                        });
-
+                        // 處理點位圖層 (Marker Cluster Layer)
                         const bounds = [];
                         allGpsPhotos.forEach(photo => {
                             const lat = parseFloat(photo.latitude);
                             const lng = parseFloat(photo.longitude);
                             if (!isNaN(lat) && !isNaN(lng)) {
                                 const marker = L.marker([lat, lng], { 
-                                    icon: photoIcon,
-                                    // 將時間戳記附加到標記上
                                     timestamp: photo.datetime ? new Date(photo.datetime).getTime() : 0 
                                 })
                                     .bindPopup(`
@@ -549,17 +592,17 @@ require_once("DB_close.php");
                                             </div>
                                         </div>
                                     `);
-                                markerLayer.addLayer(marker);
+                                markers.addLayer(marker);
                                 bounds.push([lat, lng]);
                             }
                         });
 
-                        // 2. 處理熱力圖圖層 (Heatmap Layer)
+                        // 處理熱力圖圖層 (Heatmap Layer)
                         const gpsPoints = allGpsPhotos.map(photo => [parseFloat(photo.latitude), parseFloat(photo.longitude)]);
                         heatLayer.setLatLngs(gpsPoints);
 
                         // 將兩個圖層都加入地圖，但預設熱力圖層可能被關閉
-                        map.addLayer(markerLayer);
+                        map.addLayer(markers);
                         
                         // 調整地圖視角以顯示所有點位
                         if (bounds.length > 0) {
@@ -679,18 +722,31 @@ require_once("DB_close.php");
         
         // 根據時間範圍篩選地圖點位
         function filterMarkersByTime(startTime, endTime) {
-            markerLayer.eachLayer(layer => {
-                if (layer.options.timestamp) {
-                    const markerTime = layer.options.timestamp;
-                    if (markerTime >= startTime && markerTime <= endTime) {
-                        if (!map.hasLayer(layer)) {
-                            map.addLayer(layer);
-                        }
-                    } else {
-                        if (map.hasLayer(layer)) {
-                            map.removeLayer(layer);
-                        }
-                    }
+            markers.clearLayers();
+            const filteredPhotos = allGpsPhotos.filter(photo => {
+                const photoTime = new Date(photo.datetime).getTime();
+                return photoTime >= startTime && photoTime <= endTime;
+            });
+            
+            filteredPhotos.forEach(photo => {
+                const lat = parseFloat(photo.latitude);
+                const lng = parseFloat(photo.longitude);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const marker = L.marker([lat, lng], { 
+                        timestamp: photo.datetime ? new Date(photo.datetime).getTime() : 0 
+                    })
+                        .bindPopup(`
+                            <div style="text-align: center; min-width: 200px;">
+                                <img src="${photo.path}" alt="${photo.filename}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; cursor: pointer;" onclick="window.open('photo_detail.php?id=${photo.id}', '_blank')">
+                                <div style="font-weight: bold; color: #333; margin-bottom: 4px;">${photo.album_name || '未分類'}</div>
+                                <div style="font-size: 0.9rem; color: #666;">${photo.datetime ? new Date(photo.datetime).toLocaleDateString('zh-TW') : '未知日期'}</div>
+                                <div style="font-size: 0.8rem; color: #888; margin-top: 4px; word-break: break-all;">${photo.filename}</div>
+                                <div style="margin-top: 8px;">
+                                    <a href="photo_detail.php?id=${photo.id}" target="_blank" style="background: #1976d2; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem;">查看詳情</a>
+                                </div>
+                            </div>
+                        `);
+                    markers.addLayer(marker);
                 }
             });
         }
@@ -727,7 +783,7 @@ require_once("DB_close.php");
         // 重新整理地圖函數
         function refreshMap() {
             // 清除所有現有的標記和圖層
-            markerLayer.clearLayers();
+            markers.clearLayers();
             heatLayer.setLatLngs([]);
             
             // 清除統計資訊和錯誤訊息
