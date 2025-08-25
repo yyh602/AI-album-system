@@ -492,7 +492,7 @@ require_once("DB_close.php");
     </div>
     <div class="container" style="max-width: 1000px; margin-top:32px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
-        <div class="map-label" style="margin-bottom:18px;">回憶旅程</div>
+        <div class="map-label" style="margin-bottom:18px;">相簿精選回憶</div>
         <div id="memoryCarouselWrap">
           <div id="memoryCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="2000" style="max-width:500px;margin:0 auto;">
             <div class="carousel-inner" id="memoryCarouselInner">
@@ -513,7 +513,7 @@ require_once("DB_close.php");
       </div>
     </div>
 
-    <div class="container" style="max-width: 700px; margin-bottom:32px;">
+    <div class="container" style="max-width: 1000px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">歷史日誌</div>
         <div id="historyLogList" class="history-grid" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
@@ -536,7 +536,7 @@ require_once("DB_close.php");
       </div>
     </div>
 
-    <div class="container" style="max-width: 700px; margin-bottom:32px;">
+    <div class="container" style="max-width: 1000px; margin-bottom:32px;">
       <div class="map-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label">地圖總覽與照片時間軸</div>
         <div id="map" style="height: 400px; width: 100%; max-width: 800px; margin: 0 auto; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); background: #fff;"></div>
