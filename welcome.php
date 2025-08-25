@@ -640,7 +640,7 @@ require_once("DB_close.php");
             }
         }
 
-        // 顯示沒有數據的提示訊息
+        // 顯示沒有數據的提示訊息。
         function showNoDataMessage() {
             const mapContainer = document.getElementById('map');
             let noDataDiv = mapContainer.querySelector('.no-data-message');
