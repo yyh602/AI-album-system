@@ -459,22 +459,21 @@ require_once("DB_close.php");
       </div>
     </div>
 
-    <!-- 地圖總覽區塊（獨立區塊） -->
+    <!-- 地圖總覽區塊（獨立區塊）、時間軸區塊 -->
     <div class="container" style="max-width: 700px; margin-bottom:32px;">
       <div class="map-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label">地圖總覽</div>
         <div id="map" style="height: 400px; width: 100%; max-width: 800px; margin: 0 auto; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); background: #fff;"></div>
-      </div>
-    </div>
-
-    <!-- 時間軸區塊 -->
-    <div class="timeline-container">
-        <div class="timeline-title">照片時間軸</div>
-        <div id="timeline"></div>
-        <div class="timeline-labels">
-            <span id="timeline-start-date"></span>
-            <span id="timeline-end-date"></span>
+        
+        <div class="timeline-container" style="margin-top: 20px;">
+            <div class="timeline-title">照片時間軸</div>
+            <div id="timeline"></div>
+            <div class="timeline-labels">
+                <span id="timeline-start-date"></span>
+                <span id="timeline-end-date"></span>
+            </div>
         </div>
+      </div>
     </div>
 
     <div class="links">
