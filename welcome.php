@@ -216,31 +216,45 @@ require_once("DB_close.php");
         }
         
         .welcome-popup.minimized {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            max-width: 60px !important;
         }
         
         .welcome-popup.minimized .welcome-popup-content {
-            display: none;
+            display: none !important;
         }
         
         .welcome-popup.minimized::before {
-            content: "🎉";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: #1976d2;
+            content: "🎉" !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            font-size: 24px !important;
+            color: #1976d2 !important;
+            z-index: 1 !important;
         }
         
         .welcome-popup.minimized:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
+            transform: scale(1.1) !important;
+            box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3) !important;
+        }
+        
+        /* 強制縮小樣式 */
+        #welcomePopup.minimized {
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            max-width: 60px !important;
+            min-width: 60px !important;
         }
         
         @keyframes slideInRight {
@@ -649,6 +663,7 @@ require_once("DB_close.php");
         </div>
         <div class="welcome-popup-footer">
           <button class="welcome-popup-btn" onclick="minimizeWelcomePopup()">開始使用</button>
+          <button class="welcome-popup-btn" onclick="testMinimize()" style="margin-left: 8px; background: #ff9800;">測試縮小</button>
         </div>
       </div>
     </div>
@@ -1001,13 +1016,20 @@ require_once("DB_close.php");
         
         // 縮小歡迎彈跳視窗
         function minimizeWelcomePopup() {
+            console.log('minimizeWelcomePopup 被調用');
             const popup = document.getElementById('welcomePopup');
-            popup.classList.add('minimized');
-            
-            // 添加點擊事件來重新展開
-            popup.onclick = function() {
-                expandWelcomePopup();
-            };
+            if (popup) {
+                console.log('找到彈跳視窗元素');
+                popup.classList.add('minimized');
+                console.log('已添加 minimized 類別');
+                
+                // 添加點擊事件來重新展開
+                popup.onclick = function() {
+                    expandWelcomePopup();
+                };
+            } else {
+                console.error('找不到彈跳視窗元素');
+            }
         }
         
         // 展開歡迎彈跳視窗
@@ -1017,6 +1039,18 @@ require_once("DB_close.php");
             
             // 移除點擊事件
             popup.onclick = null;
+        }
+        
+        // 測試縮小功能
+        function testMinimize() {
+            console.log('測試縮小功能');
+            const popup = document.getElementById('welcomePopup');
+            if (popup) {
+                console.log('彈跳視窗當前類別:', popup.className);
+                popup.classList.add('minimized');
+                console.log('添加 minimized 後類別:', popup.className);
+                console.log('彈跳視窗樣式:', window.getComputedStyle(popup));
+            }
         }
         
         // 顯示歡迎彈跳視窗
