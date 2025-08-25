@@ -52,6 +52,52 @@ if ($link instanceof mysqli && $link !== null) {
 }
 
 require_once("DB_close.php");
+
+// 根據相簿名稱或內容決定顯示的圖標
+function getDiaryIcon($albumName, $content = '') {
+    $albumName = strtolower($albumName);
+    $content = strtolower($content);
+    
+    // 根據相簿名稱判斷
+    if (strpos($albumName, 'test') !== false || strpos($albumName, '測試') !== false) {
+        return ['🔬', 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'];
+    }
+    if (strpos($albumName, '鬼滅') !== false || strpos($albumName, 'anime') !== false || strpos($albumName, '動漫') !== false) {
+        return ['🎭', 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'];
+    }
+    if (strpos($albumName, 'jpg') !== false || strpos($albumName, 'photo') !== false || strpos($albumName, '照片') !== false) {
+        return ['📸', 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'];
+    }
+    if (strpos($albumName, 'heic') !== false) {
+        return ['📱', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'];
+    }
+    if (strpos($albumName, 'family') !== false || strpos($albumName, '家庭') !== false || strpos($albumName, '我們這一家') !== false) {
+        return ['👨‍👩‍👧‍👦', 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'];
+    }
+    if (strpos($albumName, 'travel') !== false || strpos($albumName, '旅行') !== false || strpos($albumName, '旅遊') !== false) {
+        return ['✈️', 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'];
+    }
+    if (strpos($albumName, 'food') !== false || strpos($albumName, '美食') !== false || strpos($albumName, '餐廳') !== false) {
+        return ['🍽️', 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'];
+    }
+    if (strpos($albumName, 'nature') !== false || strpos($albumName, '自然') !== false || strpos($albumName, '風景') !== false) {
+        return ['🌿', 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'];
+    }
+    
+    // 根據內容判斷
+    if (strpos($content, '旅行') !== false || strpos($content, '旅遊') !== false) {
+        return ['✈️', 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'];
+    }
+    if (strpos($content, '美食') !== false || strpos($content, '餐廳') !== false || strpos($content, '食物') !== false) {
+        return ['🍽️', 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'];
+    }
+    if (strpos($content, '家庭') !== false || strpos($content, '家人') !== false) {
+        return ['👨‍👩‍👧‍👦', 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'];
+    }
+    
+    // 預設圖標
+    return ['📝', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -452,6 +498,34 @@ require_once("DB_close.php");
           justify-content: center;
         }
         
+        .diary-icon {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .diary-icon::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          transition: left 0.5s;
+        }
+        
+        .history-item:hover .diary-icon::before {
+          left: 100%;
+        }
+        
+        .diary-icon {
+          transition: transform 0.3s ease;
+        }
+        
+        .history-item:hover .diary-icon {
+          transform: scale(1.05);
+        }
+        
         /* 手機 RWD 修正與加強 */
         /* 針對 800px 以下螢幕，移除區塊左右留白，並移除陰影和圓角 */
         @media (max-width: 800px) {
@@ -696,11 +770,15 @@ require_once("DB_close.php");
           <?php if (empty($diaries)): ?>
             <div style="height:120px;display:flex;align-items:center;justify-content:center;color:#888;width:100%;">尚無日誌</div>
           <?php else: ?>
-            <?php foreach ($diaries as $d): ?>
+            <?php foreach ($diaries as $d): 
+                $iconData = getDiaryIcon($d['album_name'], $d['content'] ?? '');
+                $icon = $iconData[0];
+                $gradient = $iconData[1];
+            ?>
               <div class="history-item" onclick="showDiaryDetail(<?php echo $d['id']; ?>)" style="width:120px;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.2s;">
-                <img src="img/default_album_cover.svg" 
-                     style="width:120px;height:120px;object-fit:cover;" 
-                     alt="<?php echo htmlspecialchars($d['album_name']); ?>">
+                <div class="diary-icon" style="width:120px;height:120px;background:<?php echo $gradient; ?>;display:flex;align-items:center;justify-content:center;color:white;font-size:48px;">
+                  <?php echo $icon; ?>
+                </div>
                 <div style="padding:8px;background:#fff;">
                   <div style="font-size:0.9rem;font-weight:bold;color:#333;text-align:center;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($d['album_name']); ?></div>
                   <div style="font-size:0.8rem;color:#666;text-align:center;"><?php echo date('Y/m/d', strtotime($d['created_at'])); ?></div>
