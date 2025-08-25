@@ -233,51 +233,8 @@ require_once("DB_close.php");
             text-decoration: none;
             color: #007BFF;
         }
-        /* 手機 RWD 加強，像 app 畫面，無留白 */
-        @media (max-width: 800px) {
-            .main-content, .upload-section, .map-section {
-                max-width: 100vw;
-                padding: 12px 0 18px 0;
-            }
-            #map { max-width: 100vw; }
-            .upload-section, .map-section { border-radius: 0; box-shadow: none; }
-            
-            /* 平板版容器無留白 */
-            .container {
-                max-width: 100% !important;
-                padding-left: 0 !important;
-                padding-right: 0 !important;
-            }
-            
-            /* 平板版區塊無留白 */
-            .album-section {
-                border-radius: 0 !important;
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-            }
-        }
-        @media (max-width: 576px) {
-            .main-content, .upload-section, .map-section { padding: 8px 0 12px 0; }
-            .welcome-message { font-size: 1rem; }
-            .add-box { width: 56px; height: 56px; font-size: 2.2rem; }
-            #map { height: 240px; }
-            .upload-section, .map-section { border-radius: 0; }
-            .navbar { border-radius: 0; }
-            
-            /* 手機版容器無留白 */
-            .container {
-                max-width: 100% !important;
-                padding-left: 0 !important;
-                padding-right: 0 !important;
-            }
-            
-            /* 手機版區塊無留白 */
-            .album-section {
-                border-radius: 0 !important;
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-            }
-        }
+        
+        /* 回憶旅程幻燈片控制按鈕 */
         #memoryCarousel .carousel-control-prev,
         #memoryCarousel .carousel-control-next {
           width: 48px;
@@ -293,15 +250,13 @@ require_once("DB_close.php");
           transition: background 0.2s;
         }
 
-        /* 將箭頭向左和向右推動 */
+        /* 調整箭頭向左和向右的距離 */
         #memoryCarousel .carousel-control-prev {
-            /* 調整這個值來控制左邊箭頭的距離 */
-            left: -80px; /* 這裡的值可以根據您的佈局調整，例如 -50px, -70px 等 */
+            left: -80px;
         }
 
         #memoryCarousel .carousel-control-next {
-            /* 調整這個值來控制右邊箭頭的距離 */
-            right: -80px; /* 這裡的值可以與 left 屬性保持一致 */
+            right: -80px;
         }
 
         #memoryCarousel .carousel-control-prev:hover,
@@ -315,7 +270,6 @@ require_once("DB_close.php");
           background-color: transparent;
           mask-image: none;
           -webkit-mask-image: none;
-          /* 讓箭頭顏色變深灰 */
           filter: invert(30%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(60%) contrast(90%);
         }
         
@@ -332,16 +286,70 @@ require_once("DB_close.php");
           justify-content: center;
         }
         
-        @media (max-width: 576px) {
-          .history-item {
-            width: 100px !important;
-          }
-          .history-item img {
-            width: 100px !important;
-            height: 100px !important;
-          }
-        }
+        /* 手機 RWD 修正與加強 */
+        /* 針對 800px 以下螢幕，移除區塊左右留白，並移除陰影和圓角 */
+        @media (max-width: 800px) {
+            .main-content, .upload-section, .map-section {
+                max-width: 100vw;
+                padding: 12px 0 18px 0;
+            }
+            #map { max-width: 100vw; }
+            .upload-section, .map-section { border-radius: 0; box-shadow: none; }
 
+            /* 確保 Bootstrap 的 .container 類別在手機版無左右留白 */
+            .container {
+                max-width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            /* 確保相簿區塊在手機版無左右留白 */
+            .album-section {
+                border-radius: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+        }
+        /* 針對 768px 以下螢幕，修正幻燈片左右按鈕溢出問題 */
+        @media (max-width: 768px) {
+            #memoryCarousel .carousel-control-prev {
+                left: 8px;
+                background: rgba(0,0,0,0.5) !important;
+            }
+            #memoryCarousel .carousel-control-next {
+                right: 8px;
+                background: rgba(0,0,0,0.5) !important;
+            }
+        }
+        /* 針對 576px 以下螢幕，再次調整確保無留白 */
+        @media (max-width: 576px) {
+            .main-content, .upload-section, .map-section { padding: 8px 0 12px 0; }
+            .welcome-message { font-size: 1rem; }
+            .add-box { width: 56px; height: 56px; font-size: 2.2rem; }
+            #map { height: 240px; }
+            .upload-section, .map-section { border-radius: 0; }
+            .navbar { border-radius: 0; }
+            .history-item {
+              width: 100px !important;
+            }
+            .history-item img {
+              width: 100px !important;
+              height: 100px !important;
+            }
+            /* 確保 Bootstrap 的 .container 類別在手機版無左右留白 */
+            .container {
+                max-width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            /* 確保相簿區塊在手機版無左右留白 */
+            .album-section {
+                border-radius: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+        }
         /* 時間軸樣式 */
         .timeline-container {
             width: 90%;
@@ -447,7 +455,6 @@ require_once("DB_close.php");
     </style>
 </head>
 <body>
-    <!-- 導覽列 -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container-fluid px-3">
         <a class="navbar-brand d-flex align-items-center" href="#">
@@ -483,7 +490,6 @@ require_once("DB_close.php");
         <div>我們將為您智慧化整理照片，並提供AI生成日誌功能</div>
       </div>
     </div>
-    <!-- 回憶旅程幻燈片區塊（獨立區塊） -->
     <div class="container" style="max-width: 1000px; margin-top:32px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">回憶旅程</div>
@@ -507,7 +513,6 @@ require_once("DB_close.php");
       </div>
     </div>
 
-    <!-- 歷史日誌區塊（獨立區塊） -->
     <div class="container" style="max-width: 700px; margin-bottom:32px;">
       <div class="album-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label" style="margin-bottom:18px;">歷史日誌</div>
@@ -531,13 +536,11 @@ require_once("DB_close.php");
       </div>
     </div>
 
-    <!-- 地圖總覽與照片時間軸合併區塊 -->
     <div class="container" style="max-width: 700px; margin-bottom:32px;">
       <div class="map-section" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px 24px 32px 24px;">
         <div class="map-label">地圖總覽與照片時間軸</div>
         <div id="map" style="height: 400px; width: 100%; max-width: 800px; margin: 0 auto; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); background: #fff;"></div>
         
-        <!-- 時間軸區塊（合併到地圖區塊內） -->
         <div class="timeline-container" style="margin-top: 20px; padding: 0; background: none; box-shadow: none;">
             <div class="timeline-title">照片時間軸</div>
             <div id="timeline"></div>
