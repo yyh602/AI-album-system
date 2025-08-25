@@ -233,22 +233,50 @@ require_once("DB_close.php");
             text-decoration: none;
             color: #007BFF;
         }
-        /* 手機 RWD 加強，像 app 畫面，兩側留白 */
+        /* 手機 RWD 加強，像 app 畫面，無留白 */
         @media (max-width: 800px) {
             .main-content, .upload-section, .map-section {
                 max-width: 100vw;
-                padding: 12px 4vw 18px 4vw;
+                padding: 12px 0 18px 0;
             }
             #map { max-width: 100vw; }
-            .upload-section, .map-section { border-radius: 8px; box-shadow: none; }
+            .upload-section, .map-section { border-radius: 0; box-shadow: none; }
+            
+            /* 平板版容器無留白 */
+            .container {
+                max-width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            
+            /* 平板版區塊無留白 */
+            .album-section {
+                border-radius: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
         }
         @media (max-width: 576px) {
-            .main-content, .upload-section, .map-section { padding: 8px 8px 12px 8px; }
+            .main-content, .upload-section, .map-section { padding: 8px 0 12px 0; }
             .welcome-message { font-size: 1rem; }
             .add-box { width: 56px; height: 56px; font-size: 2.2rem; }
             #map { height: 240px; }
-            .upload-section, .map-section { border-radius: 8px; }
+            .upload-section, .map-section { border-radius: 0; }
             .navbar { border-radius: 0; }
+            
+            /* 手機版容器無留白 */
+            .container {
+                max-width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            
+            /* 手機版區塊無留白 */
+            .album-section {
+                border-radius: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
         }
         #memoryCarousel .carousel-control-prev,
         #memoryCarousel .carousel-control-next {
