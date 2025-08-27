@@ -24,7 +24,6 @@ if ($link instanceof mysqli && $link !== null) {
         mysqli_stmt_close($stmt);
     }
 }
-
 require_once("DB_close.php"); // 確保你的資料庫關閉檔案存在且正確
 
 // ✅ 你的 Gemini API 金鑰
@@ -86,7 +85,7 @@ if ($is_ajax && $response_text) {
 }
 
 // 歷史日誌讀取
-// 不需要重新載入 DB_open.php，因為之前已經載入過了
+require("DB_open.php");
 require_once("DB_helper.php");
 
 $diaries = [];
@@ -122,7 +121,7 @@ require_once("DB_close.php");
 ?>
 
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
   <title>AI 智慧相簿管理系統</title>
@@ -552,7 +551,8 @@ require_once("DB_close.php");
     currentSelectionMode = 'album';
     document.getElementById('albumCardList').style.display = 'flex';
     document.getElementById('allPhotosList').style.display = 'none';
-    // 不清空照片預覽，讓使用者可以看到之前選擇的照片
+    // 清空之前的選擇和產出結果
+    clearSelectionAndOutput();
     loadAlbums();
     updateButtonStyles();
   };
@@ -562,7 +562,8 @@ require_once("DB_close.php");
     currentSelectionMode = 'photos';
     document.getElementById('albumCardList').style.display = 'none';
     document.getElementById('allPhotosList').style.display = 'flex';
-    // 不清空照片預覽，讓使用者可以看到之前選擇的相簿照片
+    // 清空之前的選擇和產出結果
+    clearSelectionAndOutput();
     loadAllPhotos();
     updateButtonStyles();
   };
@@ -581,6 +582,31 @@ require_once("DB_close.php");
     }
   }
   
+  // 清空選擇和產出結果
+  function clearSelectionAndOutput() {
+    // 清空選擇的相簿和照片
+    selectedAlbumId = null;
+    selectedAlbumName = '';
+    selectedPhotos = [];
+    
+    // 隱藏照片預覽
+    document.getElementById('photoPreviewWrap').style.display = 'none';
+    document.getElementById('photoPreview').innerHTML = '';
+    document.getElementById('photoCount').textContent = '0';
+    
+    // 隱藏 AI 生成結果
+    document.getElementById('aiLogEditWrap').style.display = 'none';
+    document.getElementById('aiLogEdit').value = '';
+    document.getElementById('saveDiaryBtn').style.display = 'none';
+    
+    // 重置按鈕文字
+    document.getElementById('submitLogBtn').textContent = '送出';
+    
+    // 清空所有選擇狀態
+    document.querySelectorAll('.album-card-select.selected').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.photo-card-select.selected').forEach(c => c.classList.remove('selected'));
+  }
+  
   function resetModal() {
     selectedAlbumId = null;
     selectedAlbumName = '';
@@ -593,6 +619,8 @@ require_once("DB_close.php");
     document.getElementById('saveDiaryBtn').style.display = 'none';
     document.getElementById('aiLogEdit').value = '';
     document.getElementById('promptKeywords').value = '';
+    // 重置按鈕文字為「送出」
+    document.getElementById('submitLogBtn').textContent = '送出';
     // 清空所有選擇狀態
     document.querySelectorAll('.album-card-select.selected').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll('.photo-card-select.selected').forEach(c => c.classList.remove('selected'));
@@ -818,6 +846,8 @@ require_once("DB_close.php");
     if (match) {
       document.getElementById('aiLogEdit').value = match[1].replace(/<br\s*\/?>(\n)?/g, '\n');
       saveDiaryBtn.style.display = '';
+      // 將按鈕文字改為「重新生成」
+      submitLogBtn.textContent = '重新生成';
     } else {
       document.getElementById('aiLogEdit').value = 'AI 回應解析失敗';
     }
