@@ -1,0 +1,9 @@
+# Azure App Service 啟動命令
+# 這個檔案會讓 Azure 在每次啟動時自動執行 Python 環境設定
+
+# 設定 Python 環境
+export PYTHONPATH=/home/site/wwwroot/.local/lib/python3.9/site-packages:$PYTHONPATH
+export PATH=/home/site/wwwroot/.local/bin:$PATH
+
+# 啟動 PHP 服務
+php -S 0.0.0.0:8000 -t /home/site/wwwroot

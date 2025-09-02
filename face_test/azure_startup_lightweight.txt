@@ -1,0 +1,4 @@
+apt install -y python3-numpy python3-sklearn && pip3 install --user --no-cache-dir numpy scikit-learn opencv-python-headless
+
+
+

@@ -1,0 +1,4 @@
+apt update -y && apt install -y python3-numpy python3-sklearn && export PYTHONUSERBASE="/home/site/wwwroot/.local" && export PYTHONPATH="/home/site/wwwroot/.local/lib/python3.9/site-packages:/usr/local/lib/python3.9/dist-packages:/usr/lib/python3/dist-packages:$PYTHONPATH" && export PIP_USER=yes && mkdir -p "/home/site/wwwroot/.local/lib/python3.9/site-packages" && pip3 install --user "numpy==1.24.4" scikit-learn opencv-python-headless insightface
+
+
+

@@ -1,0 +1,30 @@
+# Azure App Service PHP 配置
+AddType application/x-httpd-php .php
+
+# 確保 PHP 檔案能被執行
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# 允許直接訪問 PHP 檔案
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # 如果檔案存在，直接訪問
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(.*)$ $1 [L]
+    
+    # 其他請求重定向到 index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ /index.php/$1 [L]
+</IfModule>
+
+# 設定 PHP 參數
+php_value upload_max_filesize 100M
+php_value post_max_size 100M
+php_value max_execution_time 300
+php_value memory_limit 512M
+
+# 啟用 BCMath 擴展
+php_flag bcmath.enable 1

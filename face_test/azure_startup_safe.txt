@@ -1,0 +1,4 @@
+echo "Starting Azure App Service..." && apt update -y && apt install -y python3-numpy python3-sklearn && echo "System packages installed" && pip3 install --user numpy scikit-learn opencv-python-headless insightface && echo "Python packages installed" && echo "Azure App Service ready"
+
+
+

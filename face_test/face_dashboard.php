@@ -5,7 +5,7 @@ $groups = glob("group/people_*");
 // 若按下「偵測人臉」按鈕，執行 test_vision.php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     set_time_limit(120); // 延長執行時間
-    exec("C:\\Python313\\python.exe test_vision.php", $output);
+    exec("C:\\Users\\DELL\\AppData\\Local\\Programs\\Python\\Python311\\python.exe test_vision.php", $output);
     header("Location: " . $_SERVER['PHP_SELF']); // 重新導向避免重新送出表單
     exit;
 }
