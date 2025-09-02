@@ -467,12 +467,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <!-- 人臉辨識功能區塊 -->
     <div class="face-detection-section">
         <p style="color: #666; margin-bottom: 20px;">
-            點擊按鈕識別照片中的人物並進行分類
+            目前一次只能10張做偵測，將來會改進
         </p>
         
         <button id="faceDetectionBtn" class="face-detection-btn">
             <i class="fas fa-magic"></i>
-            開始人臉辨識
+            重新辨識
         </button>
 
         <!-- 進度條 -->
