@@ -260,6 +260,7 @@ require_once("DB_close.php");
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 12px;
     }
+
     </style>
 </head>
 <body>
@@ -293,47 +294,26 @@ require_once("DB_close.php");
     </nav>
 
     <div class="container mt-4">
-        <div class="d-flex align-items-center mb-3">
-            <a href="welcome.php" class="btn btn-outline-secondary rounded-circle me-3"
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="welcome.php" class="btn btn-outline-secondary rounded-circle"
                title="返回首頁"
                style="width: 42px; height: 42px;">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <h2 class="mb-0">我的相簿</h2>
+            <div class="d-flex gap-2 mx-auto">
+              <a href="album.php" class="btn btn-dark">我的相簿</a>
+              <a href="album_by_time.php" class="btn btn-light">依時間分類</a>
+              <a href="album_by_location.php" class="btn btn-light">依地點分類</a>
+              <a href="face_test/album_by_person_face_test.php" class="btn btn-light">依人物分類</a>
+            </div>
         </div>
     </div>
     
     <div class="container mt-4">
-        <ul class="nav nav-tabs justify-content-center" id="albumTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="my-albums-tab" data-bs-toggle="tab" data-bs-target="#my-albums" type="button" role="tab" aria-controls="my-albums" aria-selected="true">
-              我的相簿
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="by-time-tab" data-bs-toggle="tab" data-bs-target="#by-time" type="button" role="tab" aria-controls="by-time" aria-selected="false">
-              依時間分類
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="by-location-tab" data-bs-toggle="tab" data-bs-target="#by-location" type="button" role="tab" aria-controls="by-location" aria-selected="false">
-              依地點分類
-            </button>
-          </li>
-        </ul>
-        
         <div class="tab-content" id="albumTabContent">
           <div class="tab-pane fade show active" id="my-albums" role="tabpanel" aria-labelledby="my-albums-tab">
             <h2 class="add-album-title">新增相簿 <button class="album-add-btn" id="addAlbumBtn">＋</button></h2>
             <div class="album-section-content" id="myAlbums"></div>
-          </div>
-          
-          <div class="tab-pane fade" id="by-time" role="tabpanel" aria-labelledby="by-time-tab">
-            <div class="album-section-content" id="albumsByTime"></div>
-          </div>
-          
-          <div class="tab-pane fade" id="by-location" role="tabpanel" aria-labelledby="by-location-tab">
-            <div class="album-section-content" id="albumsByLocation"></div>
           </div>
         </div>
     </div>
@@ -363,32 +343,6 @@ require_once("DB_close.php");
                 <div class="modal-footer d-flex justify-content-between">
                     <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" id="modalCancelBtn">取消</button>
                     <button type="button" class="btn btn-primary px-4" id="modalConfirmBtn" style="display:none;">確認</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal fade" id="monthAlbumModal" tabindex="-1" aria-labelledby="monthAlbumModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="monthAlbumModalLabel"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="monthAlbumPhotosGrid" class="album-section-content" style="padding:0;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal fade" id="locationAlbumModal" tabindex="-1" aria-labelledby="locationAlbumModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="locationAlbumModalLabel"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="locationAlbumPhotosGrid" class="album-section-content" style="padding:0;"></div>
                 </div>
             </div>
         </div>
@@ -459,139 +413,6 @@ require_once("DB_close.php");
             container.innerHTML = '<span style="color:#888;">載入失敗</span>';
             console.error('載入我的相簿失敗:', e);
         }
-    }
-
-    // 動態載入時間區塊（每月卡片，點擊可看該月所有照片）
-    async function loadPhotosByMonth() {
-        const container = document.getElementById('albumsByTime');
-        if (!container) {
-            console.error('albumsByTime element not found');
-            return;
-        }
-        container.innerHTML = '<span style="color:#888;">載入中...</span>';
-        try {
-            const res = await fetch('get_album_photos.php?group_photos_by_month=1');
-            const data = await res.json();
-            if (data.status === 'success' && data.photos_by_month) {
-                container.innerHTML = '';
-                Object.keys(data.photos_by_month).forEach(month => {
-                    const photos = data.photos_by_month[month];
-                    if (!photos.length) return;
-                    const cover = photos[0].path || 'img/default_album_cover.svg';
-                    const monthKey = photos[0].datetime.substr(0, 7); // YYYY-MM
-                    const card = document.createElement('div');
-                    card.className = 'album-card-preview';
-                    card.style.cursor = 'pointer';
-                    card.innerHTML = `
-                        <div class="album-card-img-wrap">
-                            <img src="${cover}" alt="${month}">
-                        </div>
-                        <div class="album-card-title">${month} (${photos.length})</div>
-                    `;
-                    card.onclick = () => showMonthAlbum(month, monthKey);
-                    container.appendChild(card);
-                });
-            } else {
-                container.innerHTML = '<span style="color:#888;">尚無照片</span>';
-            }
-        } catch (e) {
-            container.innerHTML = '<span style="color:#888;">載入失敗</span>';
-            console.error('載入月份相簿失敗:', e);
-        }
-    }
-    
-    // 動態載入地點區塊（依地點分類的卡片，點擊可看所有照片）
-    async function loadPhotosByLocation() {
-        const container = document.getElementById('albumsByLocation');
-        if (!container) {
-            console.error('albumsByLocation element not found');
-            return;
-        }
-        container.innerHTML = '<span style="color:#888;">載入中...</span>';
-        try {
-            const res = await fetch('get_album_photos.php?group_photos_by_location=1');
-            const data = await res.json();
-            if (data.status === 'success' && data.photos_by_location) {
-                container.innerHTML = '';
-                Object.keys(data.photos_by_location).forEach(location => {
-                    const photos = data.photos_by_location[location];
-                    const cover = photos.path || 'img/default_album_cover.svg';
-                    const card = document.createElement('div');
-                    card.className = 'album-card-preview';
-                    card.style.cursor = 'pointer';
-                    card.innerHTML = `
-                        <div class="album-card-img-wrap">
-                            <img src="${cover}" alt="${location}">
-                        </div>
-                        <div class="album-card-title">${location} (${photos.count})</div>
-                    `;
-                    card.onclick = () => showLocationAlbum(location);
-                    container.appendChild(card);
-                });
-            } else {
-                container.innerHTML = '<span style="color:#888;">尚無地點資訊</span>';
-            }
-        } catch (e) {
-            container.innerHTML = '<span style="color:#888;">載入失敗</span>';
-            console.error('載入地點相簿失敗:', e);
-        }
-    }
-
-    // 顯示月份相簿 Modal
-    function showMonthAlbum(month, monthKey) {
-        const modal = new bootstrap.Modal(document.getElementById('monthAlbumModal'));
-        document.getElementById('monthAlbumModalLabel').textContent = `${month} 的所有照片`;
-        
-        fetch(`get_album_photos.php?month=${monthKey}`)
-            .then(res => res.json())
-            .then(data => {
-                const body = document.getElementById('monthAlbumPhotosGrid');
-                body.innerHTML = '';
-                if (data.status === 'success' && data.photos.length) {
-                    data.photos.forEach(photo => {
-                        const card = document.createElement('div');
-                        card.className = 'album-card-preview';
-                        card.innerHTML = `<a href="photo_detail.php?id=${photo.id}" style="text-decoration:none;color:inherit;">
-                                <div class="album-card-img-wrap">
-                                    <img src="${photo.path}" alt="照片">
-                                </div>
-                                <div class="album-card-title">${photo.datetime.substr(11, 5)}</div>
-                            </a>`;
-                        body.appendChild(card);
-                    });
-                } else {
-                    body.innerHTML = '<span style="color:#888;">尚無照片</span>';
-                }
-            });
-        modal.show();
-    }
-    // 顯示地點相簿 Modal
-    function showLocationAlbum(location) {
-        const modal = new bootstrap.Modal(document.getElementById('locationAlbumModal'));
-        document.getElementById('locationAlbumModalLabel').textContent = `${location} 的所有照片`;
-        
-        fetch(`get_album_photos.php?location=${encodeURIComponent(location)}`)
-            .then(res => res.json())
-            .then(data => {
-                const body = document.getElementById('locationAlbumPhotosGrid');
-                body.innerHTML = '';
-                if (data.status === 'success' && data.photos.length) {
-                    data.photos.forEach(photo => {
-                         const card = document.createElement('div');
-                         card.className = 'album-card-preview';
-                         card.innerHTML = `<a href="photo_detail.php?id=${photo.id}" style="text-decoration:none;color:inherit;">
-                                 <div class="album-card-img-wrap">
-                                     <img src="${photo.path}" alt="照片">
-                                 </div>
-                                 <div class="album-card-title">${photo.datetime.substr(0, 10)}</div>
-                             </a>`;
-                         body.appendChild(card);
-                    });
-                } else {
-                    body.innerHTML = '<span style="color:#888;">尚無照片</span>';
-                }
-            });
-        modal.show();
     }
 
 
@@ -743,8 +564,6 @@ require_once("DB_close.php");
 
         // 頁面載入時，載入所有相簿和分類
         loadMyAlbums();
-        loadPhotosByMonth();
-        loadPhotosByLocation();
     });
 
     // 修正後的 renderAlbumPhotoGrid 函式

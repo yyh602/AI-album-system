@@ -231,7 +231,7 @@ def group_faces():
     print(sim_matrix)
     
     # 修正：將相似度轉換為距離矩陣，然後使用圖論分群
-    threshold = 0.45  # 適中的分群：平衡準確度與速度
+    threshold = 0.425  # 適中的分群：平衡準確度與速度
     
     # 將相似度轉換為距離：distance = 1 - similarity
     # 這樣確保所有值都是非負的，且相似度越高，距離越小

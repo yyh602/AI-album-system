@@ -188,10 +188,6 @@ class AzureFaceDetection {
     private function extractFacesFromImage($imagePath, $originalUrl, $faces, &$faceIndex) {
         $faceMap = [];
         
-        // 圖片品質檢查參數
-        $minFaceSize = 40;   // 降低最小人臉尺寸要求，確保偵測
-        $maxFaceSize = 1200; // 提高最大人臉尺寸，包含大人臉
-        
         // 載入圖片並自動修正方向
         $src = $this->loadImageWithOrientation($imagePath);
         if (!$src) {
@@ -215,9 +211,10 @@ class AzureFaceDetection {
             // 步驟 1: 計算原始人臉尺寸
             $faceWidth = $x2 - $x1;
             $faceHeight = $y2 - $y1;
+            $faceSize = max($faceWidth, $faceHeight); // 使用較大的邊作為人臉尺寸
             
             // 步驟 2: 使用固定的簡單邊框
-            $margin = 8; // 固定 5px 邊框，簡單有效
+            $margin = 8; // 固定 8px 邊框，簡單有效
             
             // 確保邊框大小為整數
             $margin = intval($margin);
@@ -238,9 +235,9 @@ class AzureFaceDetection {
             $w = $final_x2 - $final_x1;
             $h = $final_y2 - $final_y1;
             
-            // 簡化的品質檢查：只檢查基本有效性
-            if ($w <= 0 || $h <= 0) {
-                error_log("無效的裁切尺寸，跳過: {$w}x{$h}, 原始臉大小: {$faceSize}, 邊框: {$margin}");
+            // 品質檢查：確保裁切區域有合理的尺寸
+            if ($w <= 20 || $h <= 20) {
+                error_log("裁切尺寸太小，跳過: {$w}x{$h}, 原始臉大小: {$faceSize}px, 邊框: {$margin}px");
                 continue;
             }
             
@@ -255,7 +252,7 @@ class AzureFaceDetection {
                 'original_face_size' => $faceSize,
                 'margin_used' => $margin,
                 'crop_area' => "({$final_x1},{$final_y1}) to ({$final_x2},{$final_y2})",
-                'method' => 'simple_5px_margin'
+                'method' => 'simple_8px_margin'
             ];
         }
         
