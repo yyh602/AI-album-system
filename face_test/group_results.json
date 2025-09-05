@@ -1,0 +1,212 @@
+[
+  {
+    "group_name": "people_1",
+    "faces": [
+      {
+        "filename": "face_0.jpg",
+        "size": 17748,
+        "path": "group/people_1/face_0.jpg"
+      },
+      {
+        "filename": "face_1.jpg",
+        "size": 13476,
+        "path": "group/people_1/face_1.jpg"
+      },
+      {
+        "filename": "face_2.jpg",
+        "size": 5462,
+        "path": "group/people_1/face_2.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_2",
+    "faces": [
+      {
+        "filename": "face_10.jpg",
+        "size": 4850,
+        "path": "group/people_2/face_10.jpg"
+      },
+      {
+        "filename": "face_27.jpg",
+        "size": 4832,
+        "path": "group/people_2/face_27.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_3",
+    "faces": [
+      {
+        "filename": "face_11.jpg",
+        "size": 5311,
+        "path": "group/people_3/face_11.jpg"
+      },
+      {
+        "filename": "face_20.jpg",
+        "size": 31653,
+        "path": "group/people_3/face_20.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_4",
+    "faces": [
+      {
+        "filename": "face_12.jpg",
+        "size": 5689,
+        "path": "group/people_4/face_12.jpg"
+      },
+      {
+        "filename": "face_25.jpg",
+        "size": 13610,
+        "path": "group/people_4/face_25.jpg"
+      },
+      {
+        "filename": "face_7.jpg",
+        "size": 26790,
+        "path": "group/people_4/face_7.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_5",
+    "faces": [
+      {
+        "filename": "face_13.jpg",
+        "size": 4221,
+        "path": "group/people_5/face_13.jpg"
+      },
+      {
+        "filename": "face_17.jpg",
+        "size": 5393,
+        "path": "group/people_5/face_17.jpg"
+      },
+      {
+        "filename": "face_21.jpg",
+        "size": 8109,
+        "path": "group/people_5/face_21.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_6",
+    "faces": [
+      {
+        "filename": "face_14.jpg",
+        "size": 4607,
+        "path": "group/people_6/face_14.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_7",
+    "faces": [
+      {
+        "filename": "face_15.jpg",
+        "size": 5455,
+        "path": "group/people_7/face_15.jpg"
+      },
+      {
+        "filename": "face_19.jpg",
+        "size": 8767,
+        "path": "group/people_7/face_19.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_8",
+    "faces": [
+      {
+        "filename": "face_16.jpg",
+        "size": 4164,
+        "path": "group/people_8/face_16.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_9",
+    "faces": [
+      {
+        "filename": "face_18.jpg",
+        "size": 11440,
+        "path": "group/people_9/face_18.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_10",
+    "faces": [
+      {
+        "filename": "face_22.jpg",
+        "size": 7099,
+        "path": "group/people_10/face_22.jpg"
+      },
+      {
+        "filename": "face_9.jpg",
+        "size": 5925,
+        "path": "group/people_10/face_9.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_11",
+    "faces": [
+      {
+        "filename": "face_23.jpg",
+        "size": 12255,
+        "path": "group/people_11/face_23.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_12",
+    "faces": [
+      {
+        "filename": "face_24.jpg",
+        "size": 11357,
+        "path": "group/people_12/face_24.jpg"
+      },
+      {
+        "filename": "face_3.jpg",
+        "size": 23250,
+        "path": "group/people_12/face_3.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_13",
+    "faces": [
+      {
+        "filename": "face_26.jpg",
+        "size": 7206,
+        "path": "group/people_13/face_26.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_14",
+    "faces": [
+      {
+        "filename": "face_4.jpg",
+        "size": 27902,
+        "path": "group/people_14/face_4.jpg"
+      }
+    ]
+  },
+  {
+    "group_name": "people_15",
+    "faces": [
+      {
+        "filename": "face_5.jpg",
+        "size": 36600,
+        "path": "group/people_15/face_5.jpg"
+      },
+      {
+        "filename": "face_6.jpg",
+        "size": 27130,
+        "path": "group/people_15/face_6.jpg"
+      }
+    ]
+  }
+]

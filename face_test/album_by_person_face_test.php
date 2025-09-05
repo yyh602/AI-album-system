@@ -12,9 +12,9 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 0);
 
 // 設定更長的執行時間和記憶體限制
-ini_set('max_execution_time', 600); // 10 分鐘
+ini_set('max_execution_time', 900); // 15 分鐘執行時間
 ini_set('memory_limit', '1024M');   // 1GB 記憶體
-set_time_limit(600);                // 10 分鐘超時
+set_time_limit(900);                // 15 分鐘超時
 
 // 啟動輸出緩衝
 ob_start();
@@ -148,6 +148,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             // 執行人臉分群 - 使用修正版腳本
             error_log("開始進行人臉分群...");
             $groupOutput = $detector->groupFacesWithFixedScript();
+            
+            // 過濾 Python 腳本輸出，只保留關鍵信息
+            $filteredOutput = [];
+            if (is_array($groupOutput)) {
+                foreach ($groupOutput as $line) {
+                    // 只保留包含關鍵信息的行
+                    if (strpos($line, '完成') !== false || 
+                        strpos($line, '群組') !== false || 
+                        strpos($line, '特徵向量') !== false ||
+                        strpos($line, '資料庫') !== false) {
+                        $filteredOutput[] = $line;
+                    }
+                }
+            }
+            
+            // 載入特徵向量管理器
+            require_once 'face_feature_manager.php';
+            $featureManager = new FaceFeatureManager($link);
+            
+            // 批量提取並儲存特徵向量
+            error_log("開始提取並儲存特徵向量...");
+            $featureResult = $featureManager->batchExtractAndSaveFeatures();
+            error_log("特徵向量處理完成: " . json_encode($featureResult));
             error_log("人臉分群完成");
             
             // 檢查分群結果
@@ -157,8 +180,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $groupResults = json_decode(file_get_contents($groupResultsPath), true) ?: [];
             }
             
-            // 簡化：只計算偵測到的人臉數量，不操作資料庫
-            $updated_count = count($faces);
+            // 將偵測到的人臉儲存到資料庫
+            error_log("開始儲存人臉資料到資料庫...");
+            $saved_faces = 0;
+            
+            foreach ($faces as $face_filename => $face_info) {
+                try {
+                    // 檢查人臉是否已經存在
+                    $check_sql = "SELECT id FROM faces WHERE face_filename = ?";
+                    $check_stmt = mysqli_prepare($link, $check_sql);
+                    mysqli_stmt_bind_param($check_stmt, "s", $face_filename);
+                    mysqli_stmt_execute($check_stmt);
+                    $check_result = mysqli_stmt_get_result($check_stmt);
+                    
+                    if (mysqli_num_rows($check_result) == 0) {
+                        // 插入新人臉記錄
+                        $insert_sql = "INSERT INTO faces (photo_id, face_filename, confidence, bounding_box, face_size, margin_used, crop_dimensions, original_image, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                        $insert_stmt = mysqli_prepare($link, $insert_sql);
+                        
+                        // 從 face_info 中提取資料
+                        $photo_id = 1; // 預設值，因為我們沒有 photo_id
+                        $confidence = 0.8; // 預設信心度
+                        $bounding_box = json_encode([]); // 空的邊界框
+                        $face_size = $face_info['face_size'] ?? 'medium';
+                        $margin_used = $face_info['margin_used'] ?? 8;
+                        $crop_dimensions = $face_info['crop_dimensions'] ?? '80x80';
+                        $original_image = $face_info['original_image'] ?? '';
+                        
+                        mysqli_stmt_bind_param($insert_stmt, "isdsisss", 
+                            $photo_id, $face_filename, $confidence, 
+                            $bounding_box, $face_size, $margin_used, 
+                            $crop_dimensions, $original_image);
+                        
+                        if (mysqli_stmt_execute($insert_stmt)) {
+                            $saved_faces++;
+                            error_log("已儲存人臉: " . $face_filename);
+                        } else {
+                            error_log("儲存人臉失敗: " . $face_filename . " - " . mysqli_stmt_error($insert_stmt));
+                        }
+                        mysqli_stmt_close($insert_stmt);
+                    } else {
+                        error_log("人臉已存在: " . $face_filename);
+                    }
+                    mysqli_stmt_close($check_stmt);
+                    
+                } catch (Exception $e) {
+                    error_log("儲存人臉時發生錯誤: " . $e->getMessage());
+                }
+            }
+            
+            error_log("資料庫儲存完成，共儲存 {$saved_faces} 個人臉");
+            $updated_count = $saved_faces;
             
             echo json_encode([
                 'status' => 'success',
@@ -170,9 +242,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     'updated_photos' => $updated_count,
                     'face_map' => $faces,
                     'group_results' => $groupResults,
-                    'python_output' => $groupOutput
+                    'python_output' => $filteredOutput
                 ]
             ], JSON_UNESCAPED_UNICODE);
+            
+        } elseif ($_POST['action'] === 'extract_features') {
+            // 提取特徵向量
+            try {
+                require_once 'face_feature_manager.php';
+                $featureManager = new FaceFeatureManager($link);
+                
+                $result = $featureManager->batchExtractAndSaveFeatures();
+                
+                echo json_encode([
+                    'status' => 'success',
+                    'data' => $result
+                ], JSON_UNESCAPED_UNICODE);
+                
+            } catch (Exception $e) {
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ], JSON_UNESCAPED_UNICODE);
+            }
+            
+        } elseif ($_POST['action'] === 'get_feature_vector') {
+            // 獲取特定人臉的特徵向量
+            try {
+                if (!isset($_POST['face_filename'])) {
+                    throw new Exception('缺少 face_filename 參數');
+                }
+                
+                require_once 'face_feature_manager.php';
+                $featureManager = new FaceFeatureManager($link);
+                
+                $face_filename = $_POST['face_filename'];
+                $feature_vector = $featureManager->getFeatureVector($face_filename);
+                
+                if ($feature_vector) {
+                    echo json_encode([
+                        'status' => 'success',
+                        'face_filename' => $face_filename,
+                        'feature_vector' => $feature_vector,
+                        'dimension' => count($feature_vector)
+                    ], JSON_UNESCAPED_UNICODE);
+                } else {
+                    echo json_encode([
+                        'status' => 'error',
+                        'message' => '找不到特徵向量'
+                    ], JSON_UNESCAPED_UNICODE);
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ], JSON_UNESCAPED_UNICODE);
+            }
+            
+        } elseif ($_POST['action'] === 'find_similar_faces') {
+            // 尋找相似人臉
+            try {
+                if (!isset($_POST['face_filename'])) {
+                    throw new Exception('缺少 face_filename 參數');
+                }
+                
+                require_once 'face_feature_manager.php';
+                $featureManager = new FaceFeatureManager($link);
+                
+                $face_filename = $_POST['face_filename'];
+                $threshold = isset($_POST['threshold']) ? (float)$_POST['threshold'] : 0.7;
+                $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : 10;
+                
+                $similar_faces = $featureManager->findSimilarFaces($face_filename, $threshold, $limit);
+                
+                echo json_encode([
+                    'status' => 'success',
+                    'target_face' => $face_filename,
+                    'similar_faces' => $similar_faces,
+                    'threshold' => $threshold,
+                    'limit' => $limit
+                ], JSON_UNESCAPED_UNICODE);
+                
+            } catch (Exception $e) {
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ], JSON_UNESCAPED_UNICODE);
+            }
             
         } else {
             echo json_encode([
@@ -474,6 +631,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             <i class="fas fa-magic"></i>
             重新辨識
         </button>
+        
+        <div class="mt-3">
+            <button id="extractFeaturesBtn" class="btn btn-info me-2">
+                <i class="fas fa-brain"></i> 提取特徵向量
+            </button>
+            <button id="findSimilarBtn" class="btn btn-success me-2">
+                <i class="fas fa-search"></i> 尋找相似人臉
+            </button>
+            <button id="viewFeaturesBtn" class="btn btn-warning">
+                <i class="fas fa-eye"></i> 查看特徵向量
+            </button>
+        </div>
 
         <!-- 進度條 -->
         <div id="progressContainer" class="progress-container">
@@ -645,9 +814,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
                  debugLog('事件監聽器綁定完成');
          
-         // 頁面載入時檢查是否有之前的分群結果
-         checkExistingResults();
-     });
+                 // 頁面載入時檢查是否有之前的分群結果
+        checkExistingResults();
+        
+        // 綁定新按鈕的事件處理器
+        const extractFeaturesBtn = document.getElementById('extractFeaturesBtn');
+        const findSimilarBtn = document.getElementById('findSimilarBtn');
+        const viewFeaturesBtn = document.getElementById('viewFeaturesBtn');
+        
+        if (extractFeaturesBtn) {
+            extractFeaturesBtn.addEventListener('click', function() {
+                extractFeatures();
+            });
+        }
+        
+        if (findSimilarBtn) {
+            findSimilarBtn.addEventListener('click', function() {
+                findSimilarFaces();
+            });
+        }
+        
+        if (viewFeaturesBtn) {
+            viewFeaturesBtn.addEventListener('click', function() {
+                viewFeatureVectors();
+            });
+        }
+    });
+    
+    // 提取特徵向量
+    function extractFeatures() {
+        const btn = document.getElementById('extractFeaturesBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+        }
+        
+        fetch('album_by_person_face_test.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=extract_features'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                alert(`特徵向量提取完成！\n總數: ${result.data.total}\n成功: ${result.data.successful}\n失敗: ${result.data.failed}`);
+            } else {
+                alert('特徵向量提取失敗: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('提取特徵向量失敗:', error);
+            alert('提取特徵向量失敗: ' + error.message);
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-brain"></i> 提取特徵向量';
+            }
+        });
+    }
+    
+    // 尋找相似人臉
+    function findSimilarFaces() {
+        const faceFilename = prompt('請輸入要尋找相似人臉的檔案名稱 (例如: face_1.jpg):');
+        if (!faceFilename) return;
+        
+        const btn = document.getElementById('findSimilarBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 搜尋中...';
+        }
+        
+        fetch('album_by_person_face_test.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=find_similar_faces&face_filename=${encodeURIComponent(faceFilename)}&threshold=0.7&limit=10`
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                if (result.similar_faces.length > 0) {
+                    let message = `找到 ${result.similar_faces.length} 個相似人臉:\n\n`;
+                    result.similar_faces.forEach((face, index) => {
+                        message += `${index + 1}. ${face.face_filename} (相似度: ${(face.similarity * 100).toFixed(1)}%)\n`;
+                    });
+                    alert(message);
+                } else {
+                    alert('沒有找到相似度達到 70% 以上的人臉');
+                }
+            } else {
+                alert('尋找相似人臉失敗: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('尋找相似人臉失敗:', error);
+            alert('尋找相似人臉失敗: ' + error.message);
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> 尋找相似人臉';
+            }
+        });
+    }
+    
+    // 查看特徵向量
+    function viewFeatureVectors() {
+        const faceFilename = prompt('請輸入要查看特徵向量的檔案名稱 (例如: face_1.jpg):');
+        if (!faceFilename) return;
+        
+        const btn = document.getElementById('viewFeaturesBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 載入中...';
+        }
+        
+        fetch('album_by_person_face_test.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=get_feature_vector&face_filename=${encodeURIComponent(faceFilename)}`
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                const vectorPreview = result.feature_vector.slice(0, 10).join(', ');
+                alert(`特徵向量資訊:\n檔案: ${result.face_filename}\n維度: ${result.dimension}\n前10個數值: ${vectorPreview}...`);
+                
+                // 在控制台顯示完整特徵向量
+                console.log('完整特徵向量:', result.feature_vector);
+            } else {
+                alert('查看特徵向量失敗: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('查看特徵向量失敗:', error);
+            alert('查看特徵向量失敗: ' + error.message);
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-eye"></i> 查看特徵向量';
+            }
+        });
+    }
      
      // 檢查是否有之前的分群結果
      function checkExistingResults() {

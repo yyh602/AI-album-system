@@ -104,7 +104,8 @@ class AzureFaceDetection {
         if (!is_dir($this->faceDir)) mkdir($this->faceDir, 0777, true);
         if (!is_dir($this->groupDir)) mkdir($this->groupDir, 0777, true);
         
-        $this->cleanDirectory($this->faceDir);
+        // 不清理 faces 目錄，保留現有的人臉檔案
+        // $this->cleanDirectory($this->faceDir);
         $this->cleanDirectory($this->groupDir);
     }
     
@@ -120,10 +121,35 @@ class AzureFaceDetection {
         }
     }
     
+    // 獲取下一個可用的 face 編號，避免覆蓋現有檔案
+    private function getNextFaceIndex() {
+        if (!is_dir($this->faceDir)) {
+            return 0;
+        }
+        
+        $existing_faces = [];
+        $files = glob($this->faceDir . '/face_*.jpg');
+        
+        foreach ($files as $file) {
+            $filename = basename($file);
+            if (preg_match('/face_(\d+)\.jpg/', $filename, $matches)) {
+                $existing_faces[] = (int)$matches[1];
+            }
+        }
+        
+        if (empty($existing_faces)) {
+            return 0;
+        }
+        
+        return max($existing_faces) + 1;
+    }
+    
     // 主要處理方法
     public function processImages($imageUrls) {
         $allFaces = [];
-        $faceIndex = 0;
+        $faceIndex = $this->getNextFaceIndex();
+        
+        error_log("📁 下一個 face 編號將從 {$faceIndex} 開始");
         
         foreach ($imageUrls as $imageUrl) {
             try {
